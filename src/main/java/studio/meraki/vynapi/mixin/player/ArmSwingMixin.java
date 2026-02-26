@@ -17,7 +17,7 @@ public abstract class ArmSwingMixin {
     private final MinecraftClient client = MinecraftClient.getInstance();
 
     @Inject(method = "swingHand", at = @At("HEAD"))
-    private void interactivestuff$swingHand(final Hand hand, final CallbackInfo ci) {
-        InteractionHandler.handleBlockInteraction(client, hand);
+    private void vynapi$swingHand(final Hand hand, final CallbackInfo ci) {
+        InteractionHandler.handleBlockInteraction(client);
     }
 }

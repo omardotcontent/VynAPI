@@ -531,11 +531,10 @@ public final class Player {
                 true);
     }
 
+    @VynFunc
     public void sendMessage(final String message) {
-        if (player == null) {
-            return;
-        }
-        player.sendMessage(Text.of("§e[InteractiveStuff] " + message), false);
+        if (player != null)
+            player.sendMessage(Text.of(message), false);
     }
 
     public ClientPlayerEntity getPlayer() {

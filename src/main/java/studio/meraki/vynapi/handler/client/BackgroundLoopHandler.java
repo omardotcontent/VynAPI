@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@SuppressWarnings("unused")
 public final class BackgroundLoopHandler {
 
     private static final Logger log = LoggerFactory.getLogger(BackgroundLoopHandler.class);
@@ -17,7 +18,7 @@ public final class BackgroundLoopHandler {
     private BackgroundLoopHandler() {
     }
 
-    public static void register() {
+    public static void init() {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.world == null || client.isPaused())
                 return;

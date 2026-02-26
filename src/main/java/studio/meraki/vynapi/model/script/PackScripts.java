@@ -22,16 +22,7 @@ public final class PackScripts {
     }
 
     public void excludeScript(final Script script) {
-        script.setState(Script.State.EXCLUDED);
-    }
-
-
-    public Map<String, Script> getScripts() {
-        return Collections.unmodifiableMap(scripts);
-    }
-
-    public int getScriptCount() {
-        return scripts.size();
+        script.exclude();
     }
 
     public Script getScript(final String fileName) {

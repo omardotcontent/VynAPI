@@ -6,6 +6,7 @@ import me.abdelaziz.runtime.Value;
 import me.abdelaziz.runtime.function.VynCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import studio.meraki.vynapi.handler.script.ScriptHandler;
 import studio.meraki.vynapi.model.exception.DelayedScriptException;
 import studio.meraki.vynapi.model.variable.Player;
 
@@ -18,7 +19,7 @@ public final class Script {
     private State state;
     private Environment environment;
     private final String code, filename;
-    private final Map<FunctionType, VynCallable> callables;
+    private final Map<String, VynCallable> callables;
 
     public Script(final String code, final String fileName) {
         this.code = code;
@@ -30,9 +31,9 @@ public final class Script {
         try {
             environment = VynMain.loadLines(code);
 
-            for (final FunctionType type : FunctionType.values()) {
+            for (final String eventName : ScriptHandler.getEventNames()) {
                 try {
-                    callables.put(type, environment.getFunction(type.getName()));
+                    callables.put(eventName, environment.getFunction(eventName));
                 } catch (final Exception ignored) {
                 }
             }
@@ -57,33 +58,25 @@ public final class Script {
         System.out.println("Loaded .vyn script: " + filename + " (state=" + state + ")");
     }
 
-    public void call(final Player playerVar) {
-        call(playerVar, FunctionType.ON_TICK);
-    }
-
-    public void call(final Player playerVar, final FunctionType functionType) {
-        call(playerVar, functionType, Collections.emptyList());
-    }
-
-    public void call(final Player playerVar, final FunctionType functionType, final List<Value> values) {
+    public void fireEvent(final Player playerVar, final String eventName, final List<Value> values) {
         if (state != State.LOADED)
             return;
 
         try {
-            final VynCallable callable = callables.get(functionType);
+            final VynCallable callable = callables.get(eventName);
             if (callable != null)
                 callable.call(environment, values);
         } catch (final Exception e) {
             state = State.ERROR;
             if (playerVar != null)
-                playerVar.sendMessage("§6(" + filename + ") §cError in script during " + functionType.getName() + ": " + e.getMessage());
+                playerVar.sendMessage("§6(" + filename + ") §cError in script during " + eventName + ": " + e.getMessage());
 
             log.error(e.getMessage(), e);
         }
     }
 
-    void setState(final State state) {
-        this.state = state;
+    void exclude() {
+        state = State.EXCLUDED;
     }
 
     public State getState() {
@@ -98,31 +91,10 @@ public final class Script {
         return environment;
     }
 
-    public String getFilename() {
-        return filename;
-    }
-
     public enum State {
         LOADED,
         IMPORTABLE,
         ERROR,
         EXCLUDED
-    }
-
-    public enum FunctionType {
-        ON_TICK("onTick"),
-        ON_DAMAGE("onDamage"),
-        ON_SWING_HAND("onSwingHand"),
-        ON_PLAY_SOUND("onPlaySound");
-
-        private final String name;
-
-        FunctionType(final String name) {
-            this.name = name;
-        }
-
-        public String getName() {
-            return name;
-        }
     }
 }

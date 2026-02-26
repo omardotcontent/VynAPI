@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import studio.meraki.vynapi.handler.script.ScriptInterpreter;
+import studio.meraki.vynapi.handler.script.ScriptHandler;
 import studio.meraki.vynapi.model.variable.Position;
 import studio.meraki.vynapi.model.variable.Sound;
 
@@ -23,18 +23,21 @@ public abstract class SoundListenerMixin {
     private final MinecraftClient client = MinecraftClient.getInstance();
 
     @Inject(method = "play(Lnet/minecraft/client/sound/SoundInstance;)Lnet/minecraft/client/sound/SoundSystem$PlayResult;", at = @At("TAIL"))
-    private void interactivestuff$play(final SoundInstance sound, final CallbackInfoReturnable<SoundSystem.PlayResult> cir) {
-        if (client.player == null || client.world == null) {
+    private void vynapi$play(final SoundInstance sound, final CallbackInfoReturnable<SoundSystem.PlayResult> cir) {
+        if (client.player == null
+                || client.world == null
+                || sound.getSound() == null
+                || sound.getCategory() == SoundCategory.UI
+                || sound.getCategory() == SoundCategory.AMBIENT)
             return;
-        }
-        if (sound.getSound() == null || sound.getCategory() == SoundCategory.UI || sound.getCategory() == SoundCategory.AMBIENT) {
-            return;
-        }
 
-        ScriptInterpreter.onPlaySound(new Sound(
-                sound.getId().toString(),
-                sound.getVolume(),
-                sound.getPitch(),
-                new Position((int) sound.getX(), (int) sound.getY(), (int) sound.getZ())));
+        ScriptHandler.fireEvent("onPlaySound",
+                new Sound(
+                        sound.getId().toString(),
+                        sound.getVolume(),
+                        sound.getPitch(),
+                        new Position((int) sound.getX(), (int) sound.getY(), (int) sound.getZ())
+                )
+        );
     }
 }
