@@ -1,8 +1,8 @@
 package studio.meraki.vynapi.mixin.player;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.util.Hand;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.InteractionHand;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -10,14 +10,14 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import studio.meraki.vynapi.handler.client.InteractionHandler;
 
-@Mixin(ClientPlayerEntity.class)
+@Mixin(LocalPlayer.class)
 public abstract class ArmSwingMixin {
 
     @Unique
-    private final MinecraftClient client = MinecraftClient.getInstance();
+    private final Minecraft client = Minecraft.getInstance();
 
-    @Inject(method = "swingHand", at = @At("HEAD"))
-    private void vynapi$swingHand(final Hand hand, final CallbackInfo ci) {
+    @Inject(method = "swing", at = @At("HEAD"))
+    private void vynapi$swingHand(InteractionHand p_108660_, CallbackInfo ci) {
         InteractionHandler.handleBlockInteraction(client);
     }
 }

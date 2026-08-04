@@ -22,7 +22,6 @@ public final class ScriptLoader {
 
     public static void init() {
         ScriptHandler.init();
-        BackgroundLoopHandler.init();
 
         ResourceManagerHelper.get(ResourceType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
 

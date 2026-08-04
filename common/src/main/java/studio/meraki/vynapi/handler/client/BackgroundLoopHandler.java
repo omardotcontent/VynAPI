@@ -1,6 +1,5 @@
 package studio.meraki.vynapi.handler.client;
 
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,13 +17,8 @@ public final class BackgroundLoopHandler {
     private BackgroundLoopHandler() {
     }
 
-    public static void init() {
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            if (client.world == null || client.isPaused())
-                return;
-
-            loops.values().forEach(BackgroundLoop::tick);
-        });
+    public static void tickAll() {
+        loops.values().forEach(BackgroundLoop::tick);
     }
 
     public static void startLoop(final String name, final Runnable task, final int tickDelay) {

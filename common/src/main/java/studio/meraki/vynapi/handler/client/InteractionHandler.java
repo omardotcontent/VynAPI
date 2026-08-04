@@ -1,9 +1,9 @@
 package studio.meraki.vynapi.handler.client;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import studio.meraki.vynapi.handler.script.ScriptHandler;
 
 public final class InteractionHandler {
@@ -13,14 +13,14 @@ public final class InteractionHandler {
     private InteractionHandler() {
     }
 
-    public static void handleBlockInteraction(final MinecraftClient client) {
+    public static void handleBlockInteraction(final Minecraft client) {
         if (BackgroundLoopHandler.isLoopRunning(COOLDOWN_ID)) return;
 
-        final ClientPlayerEntity player = client.player;
+        final LocalPlayer player = client.player;
         if (player == null) return;
 
-        final StatusEffectInstance haste = player.getStatusEffect(StatusEffects.HASTE);
-        final StatusEffectInstance conduit = player.getStatusEffect(StatusEffects.CONDUIT_POWER);
+        final MobEffectInstance haste = player.getEffect(MobEffects.HASTE);
+        final MobEffectInstance conduit = player.getEffect(MobEffects.CONDUIT_POWER);
         final int amplifier = (haste != null ? haste.getAmplifier() + 1 : 0) + (conduit != null ? conduit.getAmplifier() + 1 : 0);
 
         BackgroundLoopHandler.waitTicks(COOLDOWN_ID, Math.max(0, 4 - amplifier), () -> {});

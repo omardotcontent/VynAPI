@@ -1,39 +1,34 @@
 package studio.meraki.vynapi.mixin.sound;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.sound.SoundInstance;
-import net.minecraft.client.sound.SoundSystem;
-import net.minecraft.sound.SoundCategory;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.sounds.SoundInstance;
+import net.minecraft.client.sounds.SoundEngine;
+import net.minecraft.sounds.SoundSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import studio.meraki.vynapi.handler.script.ScriptHandler;
 import studio.meraki.vynapi.model.variable.Position;
 import studio.meraki.vynapi.model.variable.Sound;
 
-@Environment(EnvType.CLIENT)
-@Mixin(SoundSystem.class)
+@Mixin(SoundEngine.class)
 public abstract class SoundListenerMixin {
 
     @Unique
-    private final MinecraftClient client = MinecraftClient.getInstance();
+    private final Minecraft client = Minecraft.getInstance();
 
-    @Inject(method = "play(Lnet/minecraft/client/sound/SoundInstance;)Lnet/minecraft/client/sound/SoundSystem$PlayResult;", at = @At("TAIL"))
-    private void vynapi$play(final SoundInstance sound, final CallbackInfoReturnable<SoundSystem.PlayResult> cir) {
+    @Inject(method = "play", at = @At("TAIL"))
+    private void vynapi$play(SoundInstance sound, CallbackInfo ci) {
         if (client.player == null
-                || client.world == null
-                || sound.getSound() == null
-                || sound.getCategory() == SoundCategory.UI
-                || sound.getCategory() == SoundCategory.AMBIENT)
+                || client.level == null
+                || sound.getSource() == SoundSource.AMBIENT)
             return;
 
         ScriptHandler.fireEvent("onPlaySound",
                 new Sound(
-                        sound.getId().toString(),
+                        sound.getLocation().toString(),
                         sound.getVolume(),
                         sound.getPitch(),
                         new Position((int) sound.getX(), (int) sound.getY(), (int) sound.getZ())
