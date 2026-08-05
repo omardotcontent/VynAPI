@@ -13,11 +13,10 @@ import studio.meraki.vynapi.handler.client.InteractionHandler;
 @Mixin(LocalPlayer.class)
 public abstract class ArmSwingMixin {
 
-    @Unique
-    private final Minecraft client = Minecraft.getInstance();
+
 
     @Inject(method = "swing", at = @At("HEAD"))
     private void vynapi$swingHand(InteractionHand p_108660_, CallbackInfo ci) {
-        InteractionHandler.handleBlockInteraction(client);
+        InteractionHandler.handleBlockInteraction(Minecraft.getInstance());
     }
 }

@@ -2,14 +2,15 @@ package studio.meraki.vynapi.model.variable;
 
 import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.registry.Registries;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.world.entity.LivingEntity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,11 +20,11 @@ import java.util.Objects;
 @SuppressWarnings("unused")
 public final class Player {
 
-    private ClientPlayerEntity player;
-    private final MinecraftClient client;
+    private LocalPlayer player;
+    private final Minecraft client;
     private LivingEntity livingEntity;
 
-    public Player(final ClientPlayerEntity player, final MinecraftClient client) {
+    public Player(final LocalPlayer player, final Minecraft client) {
         this.player = player;
         this.client = client;
     }
@@ -36,7 +37,7 @@ public final class Player {
         return livingEntity;
     }
 
-    public void setPlayer(final ClientPlayerEntity player) {
+    public void setPlayer(final LocalPlayer player) {
         this.player = player;
     }
 
@@ -537,7 +538,7 @@ public final class Player {
             player.sendMessage(Text.of(message), false);
     }
 
-    public ClientPlayerEntity getPlayer() {
+    public LocalPlayer getPlayer() {
         return player;
     }
 }

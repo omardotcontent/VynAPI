@@ -2,16 +2,21 @@ package studio.meraki.vynapi.model.variable;
 
 import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
-import net.minecraft.client.color.world.BiomeColors;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.client.renderer.BiomeColors;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.level.Level;
+import org.spongepowered.asm.mixin.Unique;
+
+import java.util.Objects;
 
 @VynType(name = "World")
 @SuppressWarnings("unused")
 public final class World {
 
-    private final net.minecraft.world.World sourceWorld;
+    private final Level sourceWorld;
 
-    public World(final net.minecraft.world.World sourceWorld) {
+    public World(final Level sourceWorld) {
         this.sourceWorld = sourceWorld;
     }
 
@@ -22,22 +27,22 @@ public final class World {
 
     @VynFunc
     public String getDimension() {
-        return sourceWorld.getRegistryKey().getValue().toString();
+        return sourceWorld.dimension().location().toString();
     }
 
     @VynFunc
-    public boolean isDay() {
-        return sourceWorld.isDay();
+    public boolean isBrightOutside() {
+        return sourceWorld.isBrightOutside();
     }
 
     @VynFunc
-    public long getTimeOfDay() {
-        return sourceWorld.getTimeOfDay();
+    public long getDayTime() {
+        return sourceWorld.getDayTime();
     }
 
     @VynFunc
-    public long getTime() {
-        return sourceWorld.getTime();
+    public long getGameTime() {
+        return sourceWorld.getGameTime();
     }
 
     @VynFunc
@@ -47,47 +52,40 @@ public final class World {
 
     @VynFunc
     public String getBiomeAt(final int x, final int y, final int z) {
-        return sourceWorld.getBiome(new BlockPos(x, y, z)).getIdAsString();
-    }
-
-    @VynFunc
-    public int getBiomeColorAt(final int x, final int y, final int z) {
-        return sourceWorld.getBlockColor(new BlockPos(x, y, z));
+        return getBiomeId(new BlockPos(x, y, z));
     }
 
     @VynFunc
     public String getBiomeAt(final Position position) {
-        return sourceWorld.getBiome(new BlockPos(position.getX(), position.getY(), position.getZ())).getIdAsString();
+        return getBiomeId(new BlockPos(position.getX(), position.getY(), position.getZ()));
+    }
+
+    @Unique
+    private String getBiomeId(final BlockPos pos) {
+        return sourceWorld.getBiome(pos)
+                .unwrapKey()
+                .map(key -> key.location().toString())
+                .orElse(null);
     }
 
     @VynFunc
     public int getGrassColor(final Position position) {
-        return BiomeColors.getGrassColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
-    }
-
-    @VynFunc
-    public int getDryFoliageColor(final Position position) {
-        return BiomeColors.getDryFoliageColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
+        return BiomeColors.getAverageGrassColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
     }
 
     @VynFunc
     public int getFoliageColor(final Position position) {
-        return BiomeColors.getFoliageColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
+        return BiomeColors.getAverageFoliageColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
     }
 
     @VynFunc
     public int getWaterColor(final Position position) {
-        return BiomeColors.getWaterColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
-    }
-
-    @VynFunc
-    public int getBiomeColorAt(final Position position) {
-        return sourceWorld.getBlockColor(new BlockPos(position.getX(), position.getY(), position.getZ()));
+        return BiomeColors.getAverageWaterColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
     }
 
     @VynFunc
     public String toString() {
-        return "World{dimension=" + getDimension() + ", isDay=" + isDay() + ", timeOfDay=" + getTimeOfDay() + ", time=" + getTime() + "}";
+        return "World{dimension=" + getDimension() + ", isBrightOutside=" + isBrightOutside() + ", DayTime=" + getDayTime() + ", GameTime=" + getGameTime() + "}";
     }
 
 }

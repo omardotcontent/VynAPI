@@ -2,17 +2,20 @@ package studio.meraki.vynapi.model.variable;
 
 import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
+import studio.meraki.vynapi.handler.other.ModLoader.ModLoaderHandler;
 
 @VynType(name = "ModLoader")
 @SuppressWarnings("unused")
 public final class ModLoader {
 
-    private final FabricLoader loader;
+    private final ModLoaderHandler loader;
 
-    public ModLoader(final FabricLoader loader) {
+    public static ModLoader INSTANCE;
+
+    public ModLoader(final ModLoaderHandler loader) {
         this.loader = loader;
+        INSTANCE = this;
     }
 
     @VynFunc
@@ -22,18 +25,14 @@ public final class ModLoader {
 
     @VynFunc
     public static boolean isResourcePackLoaded(final String packName) {
-        final MinecraftClient client = MinecraftClient.getInstance();
-
-        return client.getResourcePackManager()
-                .getEnabledProfiles()
+        return Minecraft.getInstance().getResourcePackRepository()
+                .getSelectedPacks()
                 .stream()
-                .anyMatch(profile -> profile.getId().equalsIgnoreCase(packName));
+                .anyMatch(pack -> pack.getId().equalsIgnoreCase(packName));
     }
-
 
     @VynFunc
     public String getRawGameVersion() {
         return loader.getRawGameVersion();
     }
-
 }

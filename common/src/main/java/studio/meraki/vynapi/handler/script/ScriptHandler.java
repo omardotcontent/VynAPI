@@ -6,10 +6,7 @@ import me.abdelaziz.runtime.Environment;
 import me.abdelaziz.runtime.Value;
 import me.abdelaziz.runtime.function.nat.NativeFunction;
 import me.abdelaziz.util.NativeBinder;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 import studio.meraki.vynapi.handler.client.BackgroundLoopHandler;
 import studio.meraki.vynapi.model.VynAddon;
 import studio.meraki.vynapi.model.function.DebugText;
@@ -27,9 +24,9 @@ import java.util.function.Consumer;
 @SuppressWarnings("unused")
 public final class ScriptHandler {
 
-    private static final Player PLAYER_VAR;
+    private static final Player PLAYER_VAR = new Player(Minecraft.getInstance().player, Minecraft.getInstance());
     private static final Key KEY = new Key();
-    private static final ModLoader MOD_LOADER = new ModLoader(FabricLoader.getInstance());
+    private static final ModLoader MOD_LOADER = ModLoader.INSTANCE;
 
     private static final Map<String, PackScripts> packScripts = new ConcurrentHashMap<>();
 
@@ -41,13 +38,11 @@ public final class ScriptHandler {
     private static final NativeFunction IMPORT_SCRIPT_FUNCTION = new ImportScript(packScripts);
     private static final NativeFunction EXCLUDE_SCRIPT_FUNCTION = new ExcludeScript(packScripts);
 
-    static {
-        PLAYER_VAR = new Player(MinecraftClient.getInstance().player, MinecraftClient.getInstance());
-        ClientPlayConnectionEvents.JOIN
-                .register((handler, sender, client) -> PLAYER_VAR.setPlayer(client.player));
+    private ScriptHandler() {
     }
 
-    private ScriptHandler() {
+    public static void setPlayerVar() {
+        PLAYER_VAR.setPlayer(Minecraft.getInstance().player);
     }
 
     public static void init() {
@@ -76,8 +71,6 @@ public final class ScriptHandler {
                     consumer.accept(listener);
             }
         });
-
-        ClientTickEvents.START_CLIENT_TICK.register(ScriptHandler::tick);
     }
 
     public static void loadScripts() {
@@ -127,17 +120,17 @@ public final class ScriptHandler {
         return eventNames.contains(eventName);
     }
 
-    private static void tick(final MinecraftClient client) {
+    public static void tick(final Minecraft client) {
         if (client.player != null
                 && client.player != PLAYER_VAR.getPlayer())
             PLAYER_VAR.setPlayer(client.player);
 
         if (PLAYER_VAR.getPlayer() == null
-                || client.isPaused() || client.world == null)
+                || client.isPaused() || client.level == null)
             return;
 
         if (PLAYER_VAR.getLivingEntity() == null)
-            PLAYER_VAR.setLivingEntity(client.player.getEntity());
+            PLAYER_VAR.setLivingEntity(client.player.getControllingPassenger());
 
         fireEvent("onTick");
     }

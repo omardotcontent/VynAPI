@@ -2,12 +2,11 @@ package studio.meraki.vynapi.model.variable;
 
 import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.LightType;
-import net.minecraft.world.World;
-
-import java.util.Locale;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 @VynType(name = "Block")
 @SuppressWarnings("unused")
@@ -15,10 +14,10 @@ public final class Block {
 
     private final BlockState blockState;
     private final BlockPos sourceBlock;
-    private final World world;
+    private final Level world;
     private Position position;
 
-    public Block(final BlockPos sourceBlock, final World world) {
+    public Block(final BlockPos sourceBlock, final Level world) {
         this.sourceBlock = sourceBlock;
         this.world = world;
         this.blockState = world.getBlockState(sourceBlock);
@@ -31,11 +30,13 @@ public final class Block {
 
     @VynFunc
     public boolean hasBlockTag(final String tagID) {
-        return blockState.getBlock()
-                .getRegistryEntry()
-                .streamTags()
-                .map(tag -> tag.id().toString())
-                .anyMatch(id -> id.toLowerCase(Locale.ROOT).contains(tagID.toLowerCase(Locale.ROOT)));
+        return BuiltInRegistries.BLOCK
+                .wrapAsHolder(blockState.getBlock())
+                .tags()
+                .anyMatch(tag -> {
+                    ResourceLocation tagId = tag.location();
+                    return (tagId.equals(ResourceLocation.tryParse(tagID))) || tagId.getPath().equalsIgnoreCase(tagID);
+                });
     }
 
     @VynFunc
@@ -48,23 +49,28 @@ public final class Block {
     }
 
     @VynFunc
-    public int getBlockLightLevel() {
-        return world.getLightLevel(LightType.BLOCK, sourceBlock);
+    public int getLightBlock() {
+        return blockState.getLightBlock();
     }
 
     @VynFunc
-    public int getSkyLightLevel() {
-        return world.getLightLevel(LightType.SKY, sourceBlock);
+    public int getLightEmission() {
+        return blockState.getLightEmission();
     }
 
     @VynFunc
-    public String getInstrument() {
-        return blockState.getInstrument().getSound().getIdAsString();
+    public int getSkyDarken() {
+        return world.getSkyDarken();
     }
 
     @VynFunc
-    public boolean isSolid() {
-        return blockState.isSolidBlock(world, sourceBlock);
+    public String instrument() {
+        return blockState.instrument().getSoundEvent().getRegisteredName();
+    }
+
+    @VynFunc
+    public boolean isSolidRender() {
+        return blockState.isSolidRender();
     }
 
     @VynFunc
@@ -73,23 +79,38 @@ public final class Block {
     }
 
     @VynFunc
-    public boolean isBurnable() {
-        return blockState.isBurnable();
+    public boolean ignitedByLava() {
+        return blockState.ignitedByLava();
     }
 
     @VynFunc
-    public boolean isTransparent() {
-        return blockState.isTransparent();
+    public boolean isRandomlyTicking() {
+        return blockState.isRandomlyTicking();
     }
 
     @VynFunc
-    public boolean isOpaque() {
-        return blockState.isOpaque();
+    public boolean canBeReplaced() {
+        return blockState.canBeReplaced();
     }
 
     @VynFunc
-    public boolean isOpaqueFullCube() {
-        return blockState.isOpaqueFullCube();
+    public boolean hasBlockEntity() {
+        return blockState.hasBlockEntity();
+    }
+
+    @VynFunc
+    public boolean canOcclude() {
+        return blockState.canOcclude();
+    }
+
+    @VynFunc
+    public boolean hasLargeCollisionShape() {
+        return blockState.hasLargeCollisionShape();
+    }
+
+    @VynFunc
+    public boolean requiresCorrectToolForDrops() {
+        return blockState.requiresCorrectToolForDrops();
     }
 
     @VynFunc
