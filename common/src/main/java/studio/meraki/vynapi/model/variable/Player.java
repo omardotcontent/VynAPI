@@ -21,7 +21,7 @@ import java.util.Objects;
 public final class Player {
 
     private LocalPlayer player;
-    private final Minecraft client;
+    private Minecraft client;
     private LivingEntity livingEntity;
 
     public Player(final LocalPlayer player, final Minecraft client) {
@@ -41,6 +41,14 @@ public final class Player {
         this.player = player;
     }
 
+    public void setClient(final Minecraft client) {
+        this.client = client;
+    }
+
+    public Minecraft getClient() {
+        return client;
+    }
+
     /**
      * Backing living entity for LivingEntity-backed functions. LocalPlayer is itself a
      * LivingEntity, so fall back to it whenever no explicit entity was set - this keeps
@@ -54,7 +62,7 @@ public final class Player {
 
     @VynFunc
     public Block getSteppingBlock() {
-        if (player == null || client.level == null) {
+        if (player == null || client == null || client.level == null) {
             return null;
         }
         return new Block(player.getOnPos(), client.level);
@@ -62,7 +70,7 @@ public final class Player {
 
     @VynFunc
     public List<Block> getNearbyBlocks(final int blockRadius) {
-        if (player == null || client.level == null) {
+        if (player == null || client == null || client.level == null) {
             return null;
         }
         final List<Block> blocks = new ArrayList<>();
@@ -81,7 +89,7 @@ public final class Player {
 
     @VynFunc
     public Block getTargetBlock() {
-        if (!(client.hitResult instanceof BlockHitResult blockHit)) {
+        if (client == null || !(client.hitResult instanceof BlockHitResult blockHit)) {
             return null;
         }
         if (player == null || client.level == null) {
@@ -92,7 +100,7 @@ public final class Player {
 
     @VynFunc
     public World getWorld() {
-        return (client.level != null) ? new World(client.level) : null;
+        return (client != null && client.level != null) ? new World(client.level) : null;
     }
 
     // ------------------------------------------------------------------ identity / game state
@@ -109,14 +117,14 @@ public final class Player {
 
     @VynFunc
     public String getGameMode() {
-        return (player != null && client.gameMode != null && client.gameMode.getPlayerMode() != null)
+        return (player != null && client != null && client.gameMode != null && client.gameMode.getPlayerMode() != null)
                 ? client.gameMode.getPlayerMode().getName()
                 : null;
     }
 
     @VynFunc
     public boolean isCamera() {
-        return player != null && client.getCameraEntity() == player;
+        return player != null && client != null && client.getCameraEntity() == player;
     }
 
     @VynFunc
@@ -846,7 +854,7 @@ public final class Player {
 
     @VynFunc
     public void playSoundWorld(final Position position, final String soundId, final double volume, final double pitch) {
-        if (player == null || client.level == null) {
+        if (player == null || client == null || client.level == null) {
             return;
         }
         client.level.playLocalSound(
@@ -862,7 +870,7 @@ public final class Player {
 
     @VynFunc
     public void playSoundWorld(final Position position, final Sound sound) {
-        if (player == null || client.level == null) {
+        if (player == null || client == null || client.level == null) {
             return;
         }
         client.level.playLocalSound(

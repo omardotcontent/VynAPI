@@ -11,6 +11,11 @@ dependencies {
     }
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+
+    // Vyn Script engine - must be declared here as well because common is compileOnly + source copied
+    // Include it into the jar so it's present at runtime (fixes NoClassDefFoundError: NativeFunction)
+    modImplementation "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
+    include "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
 }
 
 loom {
