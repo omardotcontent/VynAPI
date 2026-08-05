@@ -3,6 +3,13 @@ plugins {
     id 'net.neoforged.moddev'
 }
 
+dependencies {
+    // Vyn Script engine - same reason as fabric, common deps aren't transitive with current multiloader setup
+    implementation "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
+    // Bundle it via jarJar so it's present at runtime
+    jarJar(group: "me.abdelaziz", name: "Vyn-Script", version: "1.0-SNAPSHOT")
+}
+
 neoForge {
     version = neoforge_version
     // Automatically enable neoforge AccessTransformers if the file exists

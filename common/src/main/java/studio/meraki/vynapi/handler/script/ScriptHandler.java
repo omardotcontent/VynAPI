@@ -24,9 +24,11 @@ import java.util.function.Consumer;
 @SuppressWarnings("unused")
 public final class ScriptHandler {
 
-    private static final Player PLAYER_VAR = new Player(Minecraft.getInstance().player, Minecraft.getInstance());
+    // Lazily initialized to avoid calling Minecraft.getInstance() at class-load time
+    // which can be null during early mod init or cause NPE. We initialize with nulls
+    // and populate when Minecraft is available.
+    private static final Player PLAYER_VAR = new Player(null, null);
     private static final Key KEY = new Key();
-    private static final ModLoader MOD_LOADER = ModLoader.INSTANCE;
 
     private static final Map<String, PackScripts> packScripts = new ConcurrentHashMap<>();
 
@@ -42,7 +44,11 @@ public final class ScriptHandler {
     }
 
     public static void setPlayerVar() {
-        PLAYER_VAR.setPlayer(Minecraft.getInstance().player);
+        Minecraft mc = Minecraft.getInstance();
+        if (mc != null) {
+            PLAYER_VAR.setClient(mc);
+            PLAYER_VAR.setPlayer(mc.player);
+        }
     }
 
     public static void init() {
@@ -52,14 +58,34 @@ public final class ScriptHandler {
 
         Parser.register("wait", new WaitHandler());
 
+        // Ensure PLAYER_VAR has client reference as soon as possible
+        try {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc != null) {
+                PLAYER_VAR.setClient(mc);
+                if (mc.player != null) {
+                    PLAYER_VAR.setPlayer(mc.player);
+                }
+            }
+        } catch (Exception ignored) {
+            // Minecraft might not be fully initialized yet during early client entrypoint
+            // tick() will populate it later
+        }
+
         VynMain.setStdListener(listener -> {
             NativeBinder.bind(listener, Sound.class);
             NativeBinder.bind(listener, Position.class);
 
             NativeBinder.defineConstant(listener, "player", PLAYER_VAR);
+            // world is dynamic - define as getter or current world if available, else null constant that scripts can still query via player
+            // We define world as PLAYER_VAR.getWorld() which may be null at init, but we also allow scripts to do player.getWorld()
             NativeBinder.defineConstant(listener, "world", PLAYER_VAR.getWorld());
             NativeBinder.defineConstant(listener, "key", KEY);
-            NativeBinder.defineConstant(listener, "modLoader", MOD_LOADER);
+            // Resolve ModLoader instance lazily at this point, after Fabric/NeoForge main initializer has run
+            ModLoader modLoader = ModLoader.INSTANCE;
+            if (modLoader != null) {
+                NativeBinder.defineConstant(listener, "modLoader", modLoader);
+            }
 
             listener.defineFunction("debugText", DEBUG_TEXT_FUNCTION);
             listener.defineFunction("importScript", IMPORT_SCRIPT_FUNCTION);
@@ -104,7 +130,9 @@ public final class ScriptHandler {
         stdAddons.add(addon);
         eventNames.addAll(addon.getEvents());
         System.out.println("BROOO, REGISTERED " + addon.getEvents());
-        PLAYER_VAR.sendMessage("BROOO, REGISTERED " + addon.getEvents());
+        if (PLAYER_VAR.getPlayer() != null) {
+            PLAYER_VAR.sendMessage("BROOO, REGISTERED " + addon.getEvents());
+        }
     }
 
     public static void unregisterSTD(final VynAddon addon) {
@@ -121,6 +149,13 @@ public final class ScriptHandler {
     }
 
     public static void tick(final Minecraft client) {
+        if (client == null) return;
+
+        // Keep client reference up-to-date
+        if (PLAYER_VAR.getClient() != client) {
+            PLAYER_VAR.setClient(client);
+        }
+
         if (client.player != null
                 && client.player != PLAYER_VAR.getPlayer())
             PLAYER_VAR.setPlayer(client.player);
