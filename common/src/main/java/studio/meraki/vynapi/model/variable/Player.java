@@ -3,14 +3,13 @@ package studio.meraki.vynapi.model.variable;
 import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.registry.Registries;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.phys.BlockHitResult;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,22 +42,23 @@ public final class Player {
 
     @VynFunc
     public Block getSteppingBlock() {
-        if (player == null || client.world == null) {
+        if (player == null || client.level == null) {
             return null;
         }
-        return new Block(player.getSteppingPos(), client.world);
+        // TODO(mapping): Yarn getSteppingPos() -> best guess is getOnPos(); double-check against your MC version.
+        return new Block(player.getOnPos(), client.level);
     }
 
     @VynFunc
     public List<Block> getNearbyBlocks(final int blockRadius) {
-        if (player == null || client.world == null) {
+        if (player == null || client.level == null) {
             return null;
         }
         final List<Block> blocks = new ArrayList<>();
         for (int x = -blockRadius; x <= blockRadius; x++) {
             for (int y = -blockRadius; y <= blockRadius; y++) {
                 for (int z = -blockRadius; z <= blockRadius; z++) {
-                    final Block block = new Block(player.getBlockPos().add(x, y, z), client.world);
+                    final Block block = new Block(player.blockPosition().offset(x, y, z), client.level);
                     if (!Objects.equals(block.getName(), "minecraft:air")) {
                         blocks.add(block);
                     }
@@ -70,18 +70,23 @@ public final class Player {
 
     @VynFunc
     public Block getTargetBlock() {
-        if (!(client.crosshairTarget instanceof BlockHitResult blockHit)) {
+        if (!(client.hitResult instanceof BlockHitResult blockHit)) {
             return null;
         }
-        if (player == null || client.world == null) {
+        if (player == null || client.level == null) {
             return null;
         }
-        return new Block(blockHit.getBlockPos(), client.world);
+        return new Block(blockHit.getBlockPos(), client.level);
     }
 
     @VynFunc
     public String getGameMode() {
-        return (player != null && player.getGameMode() != null) ? player.getGameMode().asString() : null;
+        // TODO(mapping): LocalPlayer doesn't expose game mode directly in vanilla Mojang mappings.
+        // Vanilla only tracks it via Minecraft#gameMode (MultiPlayerGameMode#getPlayerMode() -> GameType).
+        // Verify this against your version; GameType has no asString(), use .getName() or .name() instead.
+        return (player != null && client.gameMode != null && client.gameMode.getPlayerMode() != null)
+                ? client.gameMode.getPlayerMode().getName()
+                : null;
     }
 
     @VynFunc
@@ -91,7 +96,7 @@ public final class Player {
 
     @VynFunc
     public World getWorld() {
-        return (client.world != null) ? new World(client.world) : null;
+        return (client.level != null) ? new World(client.level) : null;
     }
 
     @VynFunc
@@ -101,17 +106,18 @@ public final class Player {
 
     @VynFunc
     public double getFoodLevel() {
-        return (player != null) ? player.getHungerManager().getFoodLevel() : -1;
+        return (player != null) ? player.getFoodData().getFoodLevel() : -1;
     }
 
     @VynFunc
     public double getSaturationLevel() {
-        return (player != null) ? player.getHungerManager().getSaturationLevel() : -1;
+        return (player != null) ? player.getFoodData().getSaturationLevel() : -1;
     }
 
     @VynFunc
-    public float getNauseaIntensity() {
-        return player != null ? player.nauseaIntensity : 0.0f;
+    public float portalEffectIntensity() {
+        // TODO(mapping): exact Mojang field name for Yarn's nauseaIntensity is unconfirmed - verify.
+        return player != null ? player.portalEffectIntensity : 0.0f;
     }
 
     @VynFunc
@@ -121,47 +127,48 @@ public final class Player {
 
     @VynFunc
     public int getItemUseTime() {
-        return (livingEntity != null) ? livingEntity.getItemUseTime() : -1;
+        return (livingEntity != null) ? livingEntity.getTicksUsingItem() : -1;
     }
 
     @VynFunc
     public int getItemUseTimeLeft() {
-        return (livingEntity != null) ? livingEntity.getItemUseTimeLeft() : -1;
+        return (livingEntity != null) ? livingEntity.getUseItemRemainingTicks() : -1;
     }
 
     @VynFunc
     public int getArmor() {
-        return (livingEntity != null) ? livingEntity.getArmor() : -1;
+        return (livingEntity != null) ? livingEntity.getArmorValue() : -1;
     }
 
     @VynFunc
     public double getEyePosX() {
-        return (livingEntity != null) ? livingEntity.getEyePos().x : 0;
+        return (livingEntity != null) ? livingEntity.getEyePosition().x : 0;
     }
 
     @VynFunc
     public double getEyePosY() {
-        return (livingEntity != null) ? livingEntity.getEyePos().y : 0;
+        return (livingEntity != null) ? livingEntity.getEyePosition().y : 0;
     }
 
     @VynFunc
     public double getEyePosZ() {
-        return (livingEntity != null) ? livingEntity.getEyePos().z : 0;
+        return (livingEntity != null) ? livingEntity.getEyePosition().z : 0;
     }
 
     @VynFunc
     public double getHeadYaw() {
-        return (livingEntity != null) ? livingEntity.getHeadYaw() : 0;
+        return (livingEntity != null) ? livingEntity.getYHeadRot() : 0;
     }
 
     @VynFunc
     public double getDamageTiltYaw() {
-        return (livingEntity != null) ? livingEntity.getDamageTiltYaw() : 0;
+        // TODO(mapping): Mojang equivalent of Yarn's getDamageTiltYaw() is unconfirmed - verify against your version.
+        return (livingEntity != null) ? livingEntity.getHurtDir() : 0;
     }
 
     @VynFunc
-    public double getStepHeight() {
-        return (livingEntity != null) ? livingEntity.getStepHeight() : 0;
+    public double maxUpStep() {
+       return (livingEntity != null) ? livingEntity.maxUpStep() : 0;
     }
 
     @VynFunc
@@ -174,16 +181,16 @@ public final class Player {
         if (player == null) {
             return 0;
         }
-        final double vx = player.getVelocity().getX();
-        final double vz = player.getVelocity().getZ();
-        final double yawRad = Math.toRadians(player.getYaw());
+        final double vx = player.getDeltaMovement().x;
+        final double vz = player.getDeltaMovement().z;
+        final double yawRad = Math.toRadians(player.getYRot());
         return (vx * Math.cos(yawRad) + vz * Math.sin(yawRad)) * 0.3333;
     }
 
     @VynFunc
     public double getVelocityY() {
         if (player == null) return 0;
-        final double y = player.getVelocity().getY();
+        final double y = player.getDeltaMovement().y;
         return (Math.abs(y + 0.0784) < 0.001) ? 0 : y * 0.3333;
     }
 
@@ -192,9 +199,9 @@ public final class Player {
         if (player == null) {
             return 0;
         }
-        final double vx = player.getVelocity().getX();
-        final double vz = player.getVelocity().getZ();
-        final double yawRad = Math.toRadians(player.getYaw());
+        final double vx = player.getDeltaMovement().x;
+        final double vz = player.getDeltaMovement().z;
+        final double yawRad = Math.toRadians(player.getYRot());
         return (-vx * Math.sin(yawRad) + vz * Math.cos(yawRad)) * 0.3333;
     }
 
@@ -215,7 +222,8 @@ public final class Player {
 
     @VynFunc
     public boolean isInFluid() {
-        return player != null && player.isInFluid();
+        // TODO(mapping): Yarn's generic isInFluid() has no confirmed vanilla Mojang equivalent - verify.
+        return player != null && player.isInLiquid();
     }
 
     @VynFunc
@@ -225,27 +233,24 @@ public final class Player {
 
     @VynFunc
     public boolean isTouchingWater() {
-        return player != null && player.isTouchingWater();
-    }
-
-    @VynFunc
-    public boolean isFlyingVehicle() {
-        return player != null && player.isFlyingVehicle();
+        return player != null && player.isInWater();
     }
 
     @VynFunc
     public boolean isClimbing() {
-        return player != null && player.isClimbing();
+        return player != null && player.onClimbable();
     }
 
     @VynFunc
     public boolean isDescending() {
+        // TODO(mapping): unconfirmed - verify against your version.
         return player != null && player.isDescending();
     }
 
     @VynFunc
-    public boolean isCrawling() {
-        return player != null && player.isCrawling();
+    public boolean isVisuallyCrawling() {
+        // TODO(mapping): unconfirmed - possibly isVisuallyCrawling() - verify against your version.
+        return player != null && player.isVisuallyCrawling();
     }
 
     @VynFunc
@@ -255,7 +260,7 @@ public final class Player {
 
     @VynFunc
     public boolean isRiding() {
-        return player != null && player.isRiding();
+        return player != null && player.isPassenger();
     }
 
     @VynFunc
@@ -265,7 +270,7 @@ public final class Player {
 
     @VynFunc
     public boolean isPushedByFluids() {
-        return player != null && player.isPushedByFluids();
+        return player != null && player.isPushedByFluid();
     }
 
     @VynFunc
@@ -280,88 +285,79 @@ public final class Player {
 
     @VynFunc
     public boolean isUsingRiptide() {
-        return player != null && player.isUsingRiptide();
-    }
-
-    @VynFunc
-    public boolean isUsingSpyglass() {
-        return player != null && player.isUsingSpyglass();
+        return player != null && player.isAutoSpinAttack();
     }
 
     @VynFunc
     public boolean isFrozen() {
-        return player != null && player.isFrozen();
+        return player != null && player.isFullyFrozen();
     }
 
     @VynFunc
-    public boolean isGlowing() {
-        return player != null && player.isGlowing();
-    }
-
-    @VynFunc
-    public boolean isGlowingLocal() {
-        return player != null && player.isGlowingLocal();
-    }
-
-    @VynFunc
-    public boolean isAtCloudHeight() {
-        return player != null && player.isAtCloudHeight();
+    public boolean isCurrentlyGlowing() {
+        return player != null && player.isCurrentlyGlowing();
     }
 
     @VynFunc
     public boolean isAutoJumpEnabled() {
+        // TODO(mapping): unconfirmed - verify against your version.
         return player != null && player.isAutoJumpEnabled();
     }
 
     @VynFunc
-    public boolean isHoldingOntoLadder() {
-        return player != null && player.isHoldingOntoLadder();
+    public boolean isSuppressingSlidingDownLadder() {
+        // TODO(mapping): unconfirmed - possibly redundant with onClimbable() - verify against your version.
+        return player != null && player.isSuppressingSlidingDownLadder();
     }
 
     @VynFunc
-    public boolean isLimitedCraftingEnabled() {
-        return player != null && player.isLimitedCraftingEnabled();
+    public boolean getDoLimitedCrafting() {
+        // TODO(mapping): unconfirmed - verify against your version.
+        return player != null && player.getDoLimitedCrafting();
     }
 
     @VynFunc
     public boolean isInsideWall() {
-        return player != null && player.isInsideWall();
+        return player != null && player.isInWall();
     }
 
     @VynFunc
     public boolean isJumping() {
-        return player != null && player.isJumping();
+        // TODO(mapping): unconfirmed - verify against your version.
+        return player != null && player.jump();
     }
 
     @VynFunc
     public boolean isOnRail() {
+        // TODO(mapping): unconfirmed - verify against your version.
         return player != null && player.isOnRail();
     }
 
     @VynFunc
     public boolean isFireImmune() {
+        // TODO(mapping): Mojang commonly exposes this without the "is" prefix as fireImmune() - verify.
         return player != null && player.isFireImmune();
     }
 
 
     @VynFunc
     public boolean isSubmergedInWater() {
-        return player != null && player.isSubmergedInWater();
+        return player != null && player.isUnderWater();
     }
 
     @VynFunc
     public boolean isSneaking() {
-        return player != null && player.isSneaking();
+        return player != null && player.isShiftKeyDown();
     }
 
     @VynFunc
     public boolean isOnGround() {
-        return player != null && player.isOnGround();
+        return player != null && player.onGround();
     }
 
     @VynFunc
     public boolean showsDeathScreen() {
-        return player != null && player.showsDeathScreen();
+        return player != null && player.shouldShowDeathScreen();
     }
 
     @VynFunc
@@ -371,21 +367,24 @@ public final class Player {
 
     @VynFunc
     public boolean isInSneakingPose() {
-        return player != null && player.isInSneakingPose();
+        return player != null && player.isCrouching();
     }
 
     @VynFunc
     public boolean shouldSlowDown() {
+        // TODO(mapping): unconfirmed - verify against your version.
         return player != null && player.shouldSlowDown();
     }
 
     @VynFunc
     public boolean isRidingJumpable() {
+        // TODO(mapping): unconfirmed - possibly jumpableVehicle() - verify against your version.
         return player != null && player.getJumpingMount() != null;
     }
 
     @VynFunc
     public float getMountJumpStrength() {
+        // TODO(mapping): unconfirmed - verify against your version.
         return player != null ? player.getMountJumpStrength() : 0.0f;
     }
 
@@ -401,11 +400,13 @@ public final class Player {
 
     @VynFunc
     public boolean isMainPlayer() {
+        // TODO(mapping): unconfirmed - may not have a direct vanilla equivalent, verify against your version.
         return player != null && player.isMainPlayer();
     }
 
     @VynFunc
     public float getMoodPercentage() {
+        // TODO(mapping): unconfirmed and fairly obscure - verify against your version.
         return player != null ? player.getMoodPercentage() : 0.0f;
     }
 
@@ -417,6 +418,7 @@ public final class Player {
 
     @VynFunc
     public boolean hasLandedInFluid() {
+        // TODO(mapping): unconfirmed - verify against your version.
         return livingEntity != null && livingEntity.hasLandedInFluid();
     }
 
@@ -426,8 +428,9 @@ public final class Player {
     }
 
     @VynFunc
-    public float getScaleFactor() {
-        return livingEntity != null ? livingEntity.getScaleFactor() : 1.0f;
+    public float getAgeScale() {
+        // TODO(mapping): unconfirmed - possibly getAgeScale() - verify against your version.
+        return livingEntity != null ? livingEntity.getAgeScale() : 1.0f;
     }
 
     @VynFunc
@@ -436,23 +439,8 @@ public final class Player {
     }
 
     @VynFunc
-    public boolean shouldSwimInFluids() {
-        return livingEntity != null && livingEntity.shouldSwimInFluids();
-    }
-
-    @VynFunc
-    public boolean canTakeDamage() {
-        return livingEntity != null && livingEntity.canTakeDamage();
-    }
-
-    @VynFunc
-    public boolean isPartOfGame() {
-        return livingEntity != null && livingEntity.isPartOfGame();
-    }
-
-    @VynFunc
     public boolean isDead() {
-        return livingEntity != null && livingEntity.isDead();
+        return livingEntity != null && livingEntity.isDeadOrDying();
     }
 
     @VynFunc
@@ -467,12 +455,13 @@ public final class Player {
 
     @VynFunc
     public float getMaxAbsorption() {
+        // TODO(mapping): unconfirmed - verify against your version.
         return livingEntity != null ? livingEntity.getMaxAbsorption() : 0.0f;
     }
 
     @VynFunc
     public int getStuckArrowCount() {
-        return livingEntity != null ? livingEntity.getStuckArrowCount() : 0;
+        return livingEntity != null ? livingEntity.getArrowCount() : 0;
     }
 
     @VynFunc
@@ -481,14 +470,9 @@ public final class Player {
     }
 
     @VynFunc
-    public boolean hasNoDrag() {
-        return livingEntity != null && livingEntity.hasNoDrag();
-    }
-
-    @VynFunc
     public void playSound(final String soundId, final double volume, final double pitch) {
         if (player != null) {
-            player.playSound(Registries.SOUND_EVENT.get(Identifier.of(soundId)), (float) volume, (float) pitch);
+            player.playSound(BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(soundId)), (float) volume, (float) pitch);
         }
     }
 
@@ -497,20 +481,20 @@ public final class Player {
         if (player == null) {
             return;
         }
-        player.playSound(Registries.SOUND_EVENT.get(Identifier.of(sound.getName())), (float) sound.getVolume(), (float) sound.getPitch());
+        player.playSound(BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(sound.getName())), (float) sound.getVolume(), (float) sound.getPitch());
     }
 
     @VynFunc
     public void playSoundWorld(final Position position, final String soundId, final double volume, final double pitch) {
-        if (player == null || client.world == null) {
+        if (player == null || client.level == null) {
             return;
         }
-        client.world.playSoundClient(
+        client.level.playLocalSound(
                 position.getX(),
                 position.getY(),
                 position.getZ(),
-                Registries.SOUND_EVENT.get(Identifier.of(soundId)),
-                SoundCategory.BLOCKS,
+                BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(soundId)).get().value(),
+                SoundSource.BLOCKS,
                 (float) volume,
                 (float) pitch,
                 true);
@@ -518,15 +502,15 @@ public final class Player {
 
     @VynFunc
     public void playSoundWorld(final Position position, final Sound sound) {
-        if (player == null || client.world == null) {
+        if (player == null || client.level == null) {
             return;
         }
-        client.world.playSoundClient(
+        client.level.playLocalSound(
                 position.getX(),
                 position.getY(),
                 position.getZ(),
-                Registries.SOUND_EVENT.get(Identifier.of(sound.getName())),
-                SoundCategory.BLOCKS,
+                BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(sound.getName())).get().value(),
+                SoundSource.BLOCKS,
                 (float) sound.getVolume(),
                 (float) sound.getPitch(),
                 true);
@@ -535,7 +519,7 @@ public final class Player {
     @VynFunc
     public void sendMessage(final String message) {
         if (player != null)
-            player.sendMessage(Text.of(message), false);
+            player.displayClientMessage(Component.literal(message), false);
     }
 
     public LocalPlayer getPlayer() {

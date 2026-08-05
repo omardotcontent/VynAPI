@@ -9,6 +9,6 @@ public final class VynAPI implements ModInitializer {
     @Override
     public void onInitialize() {
         Services.LOG.info("Hello from VynAPI on Fabric!");
-        ModLoader modLoaderApi = new ModLoader(new FabricModLoaderHandler());
+        new ModLoader(new FabricModLoaderHandler());
     }
 }
