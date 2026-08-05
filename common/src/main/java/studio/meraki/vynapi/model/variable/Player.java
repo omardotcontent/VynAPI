@@ -4,6 +4,7 @@ import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -40,12 +41,22 @@ public final class Player {
         this.player = player;
     }
 
+    /**
+     * Backing living entity for LivingEntity-backed functions. LocalPlayer is itself a
+     * LivingEntity, so fall back to it whenever no explicit entity was set - this keeps
+     * every LivingEntity getter functional instead of silently returning defaults.
+     */
+    private LivingEntity living() {
+        return livingEntity != null ? livingEntity : player;
+    }
+
+    // ------------------------------------------------------------------ blocks / world
+
     @VynFunc
     public Block getSteppingBlock() {
         if (player == null || client.level == null) {
             return null;
         }
-        // TODO(mapping): Yarn getSteppingPos() -> best guess is getOnPos(); double-check against your MC version.
         return new Block(player.getOnPos(), client.level);
     }
 
@@ -80,14 +91,55 @@ public final class Player {
     }
 
     @VynFunc
+    public World getWorld() {
+        return (client.level != null) ? new World(client.level) : null;
+    }
+
+    // ------------------------------------------------------------------ identity / game state
+
+    @VynFunc
+    public String getName() {
+        return (player != null) ? player.getName().getString() : null;
+    }
+
+    @VynFunc
+    public String getUUID() {
+        return (player != null) ? player.getStringUUID() : null;
+    }
+
+    @VynFunc
     public String getGameMode() {
-        // TODO(mapping): LocalPlayer doesn't expose game mode directly in vanilla Mojang mappings.
-        // Vanilla only tracks it via Minecraft#gameMode (MultiPlayerGameMode#getPlayerMode() -> GameType).
-        // Verify this against your version; GameType has no asString(), use .getName() or .name() instead.
         return (player != null && client.gameMode != null && client.gameMode.getPlayerMode() != null)
                 ? client.gameMode.getPlayerMode().getName()
                 : null;
     }
+
+    @VynFunc
+    public boolean isCamera() {
+        return player != null && client.getCameraEntity() == player;
+    }
+
+    @VynFunc
+    public boolean isLocalPlayer() {
+        return player != null && player.isLocalPlayer();
+    }
+
+    @VynFunc
+    public boolean isMainPlayer() {
+        return isLocalPlayer();
+    }
+
+    @VynFunc
+    public int getPermissionLevel() {
+        return player != null ? player.getPermissionLevel() : 0;
+    }
+
+    @VynFunc
+    public boolean isSpectator() {
+        return player != null && player.isSpectator();
+    }
+
+    // ------------------------------------------------------------------ position / rotation
 
     @VynFunc
     public Position getPosition() {
@@ -95,86 +147,76 @@ public final class Player {
     }
 
     @VynFunc
-    public World getWorld() {
-        return (client.level != null) ? new World(client.level) : null;
+    public double getX() {
+        return (player != null) ? player.getX() : 0;
     }
 
     @VynFunc
-    public double getHealth() {
-        return (player != null) ? player.getHealth() : -1;
+    public double getY() {
+        return (player != null) ? player.getY() : 0;
     }
 
     @VynFunc
-    public double getFoodLevel() {
-        return (player != null) ? player.getFoodData().getFoodLevel() : -1;
-    }
-
-    @VynFunc
-    public double getSaturationLevel() {
-        return (player != null) ? player.getFoodData().getSaturationLevel() : -1;
-    }
-
-    @VynFunc
-    public float portalEffectIntensity() {
-        // TODO(mapping): exact Mojang field name for Yarn's nauseaIntensity is unconfirmed - verify.
-        return player != null ? player.portalEffectIntensity : 0.0f;
-    }
-
-    @VynFunc
-    public int getExperienceLevel() {
-        return player != null ? player.experienceLevel : -1;
-    }
-
-    @VynFunc
-    public int getItemUseTime() {
-        return (livingEntity != null) ? livingEntity.getTicksUsingItem() : -1;
-    }
-
-    @VynFunc
-    public int getItemUseTimeLeft() {
-        return (livingEntity != null) ? livingEntity.getUseItemRemainingTicks() : -1;
-    }
-
-    @VynFunc
-    public int getArmor() {
-        return (livingEntity != null) ? livingEntity.getArmorValue() : -1;
+    public double getZ() {
+        return (player != null) ? player.getZ() : 0;
     }
 
     @VynFunc
     public double getEyePosX() {
-        return (livingEntity != null) ? livingEntity.getEyePosition().x : 0;
+        return (living() != null) ? living().getEyePosition().x : 0;
     }
 
     @VynFunc
     public double getEyePosY() {
-        return (livingEntity != null) ? livingEntity.getEyePosition().y : 0;
+        return (living() != null) ? living().getEyePosition().y : 0;
     }
 
     @VynFunc
     public double getEyePosZ() {
-        return (livingEntity != null) ? livingEntity.getEyePosition().z : 0;
+        return (living() != null) ? living().getEyePosition().z : 0;
+    }
+
+    @VynFunc
+    public float getYaw() {
+        return (player != null) ? player.getYRot() : 0.0f;
+    }
+
+    @VynFunc
+    public float getPitch() {
+        return (player != null) ? player.getXRot() : 0.0f;
     }
 
     @VynFunc
     public double getHeadYaw() {
-        return (livingEntity != null) ? livingEntity.getYHeadRot() : 0;
+        return (living() != null) ? living().getYHeadRot() : 0;
     }
 
     @VynFunc
-    public double getDamageTiltYaw() {
-        // TODO(mapping): Mojang equivalent of Yarn's getDamageTiltYaw() is unconfirmed - verify against your version.
-        return (livingEntity != null) ? livingEntity.getHurtDir() : 0;
+    public float getBodyYaw() {
+        return (living() != null) ? living().yBodyRot : 0.0f;
+    }
+
+    @VynFunc
+    public float getWidth() {
+        return (player != null) ? player.getBbWidth() : 0.0f;
+    }
+
+    @VynFunc
+    public float getHeight() {
+        return (player != null) ? player.getBbHeight() : 0.0f;
+    }
+
+    @VynFunc
+    public float getFallDistance() {
+        return (player != null) ? player.fallDistance : 0.0f;
     }
 
     @VynFunc
     public double maxUpStep() {
-       return (livingEntity != null) ? livingEntity.maxUpStep() : 0;
+        return (living() != null) ? living().maxUpStep() : 0;
     }
 
-    @VynFunc
-    public double getExperienceProgress() {
-        return player != null ? player.experienceProgress : -1f;
-    }
+    // ------------------------------------------------------------------ velocity / movement
 
     @VynFunc
     public double getVelocityX() {
@@ -206,8 +248,124 @@ public final class Player {
     }
 
     @VynFunc
-    public boolean isSwimming() {
-        return player != null && player.isSwimming();
+    public float getSpeed() {
+        return (living() != null) ? living().getSpeed() : 0.0f;
+    }
+
+    // ------------------------------------------------------------------ vitals
+
+    @VynFunc
+    public double getHealth() {
+        return (player != null) ? player.getHealth() : -1;
+    }
+
+    @VynFunc
+    public float getMaxHealth() {
+        return (living() != null) ? living().getMaxHealth() : -1.0f;
+    }
+
+    @VynFunc
+    public float getAbsorptionAmount() {
+        return (living() != null) ? living().getAbsorptionAmount() : 0.0f;
+    }
+
+    @VynFunc
+    public float getMaxAbsorption() {
+        return (living() != null) ? living().getMaxAbsorption() : 0.0f;
+    }
+
+    @VynFunc
+    public boolean isAlive() {
+        return living() != null && living().isAlive();
+    }
+
+    @VynFunc
+    public boolean isDead() {
+        return living() != null && living().isDeadOrDying();
+    }
+
+    @VynFunc
+    public int getHurtTime() {
+        return (living() != null) ? living().hurtTime : 0;
+    }
+
+    @VynFunc
+    public int getDeathTime() {
+        return (living() != null) ? living().deathTime : 0;
+    }
+
+    @VynFunc
+    public double getDamageTiltYaw() {
+        return (living() != null) ? living().getHurtDir() : 0;
+    }
+
+    @VynFunc
+    public double getFoodLevel() {
+        return (player != null) ? player.getFoodData().getFoodLevel() : -1;
+    }
+
+    @VynFunc
+    public double getSaturationLevel() {
+        return (player != null) ? player.getFoodData().getSaturationLevel() : -1;
+    }
+
+    @VynFunc
+    public int getAirSupply() {
+        return (player != null) ? player.getAirSupply() : -1;
+    }
+
+    @VynFunc
+    public int getMaxAirSupply() {
+        return (player != null) ? player.getMaxAirSupply() : -1;
+    }
+
+    @VynFunc
+    public int getArmor() {
+        return (living() != null) ? living().getArmorValue() : -1;
+    }
+
+    @VynFunc
+    public float getArmorCoverPercentage() {
+        return (living() != null) ? living().getArmorCoverPercentage() : 0.0f;
+    }
+
+    @VynFunc
+    public float getLuck() {
+        return (living() != null) ? living().getLuck() : 0.0f;
+    }
+
+    @VynFunc
+    public int getStuckArrowCount() {
+        return (living() != null) ? living().getArrowCount() : 0;
+    }
+
+    @VynFunc
+    public int getStingerCount() {
+        return (living() != null) ? living().getStingerCount() : 0;
+    }
+
+    // ------------------------------------------------------------------ experience
+
+    @VynFunc
+    public int getExperienceLevel() {
+        return player != null ? player.experienceLevel : -1;
+    }
+
+    @VynFunc
+    public double getExperienceProgress() {
+        return player != null ? player.experienceProgress : -1f;
+    }
+
+    @VynFunc
+    public int getTotalExperience() {
+        return player != null ? player.totalExperience : -1;
+    }
+
+    // ------------------------------------------------------------------ movement state booleans
+
+    @VynFunc
+    public boolean isOnGround() {
+        return player != null && player.onGround();
     }
 
     @VynFunc
@@ -216,24 +374,34 @@ public final class Player {
     }
 
     @VynFunc
-    public boolean isInLava() {
-        return player != null && player.isInLava();
+    public boolean isSwimming() {
+        return player != null && player.isSwimming();
     }
 
     @VynFunc
-    public boolean isInFluid() {
-        // TODO(mapping): Yarn's generic isInFluid() has no confirmed vanilla Mojang equivalent - verify.
-        return player != null && player.isInLiquid();
+    public boolean isVisuallySwimming() {
+        return living() != null && living().isVisuallySwimming();
     }
 
     @VynFunc
-    public boolean isOnFire() {
-        return player != null && player.isOnFire();
+    public boolean isSneaking() {
+        return player != null && player.isShiftKeyDown();
     }
 
     @VynFunc
-    public boolean isTouchingWater() {
-        return player != null && player.isInWater();
+    public boolean isInSneakingPose() {
+        return player != null && player.isCrouching();
+    }
+
+    @VynFunc
+    public boolean isMovingSlowly() {
+        return player != null && player.isMovingSlowly();
+    }
+
+    @VynFunc
+    public boolean isJumping() {
+        // LocalPlayer#input holds the authoritative client-side key state; Input#jump() is the jump key flag.
+        return player != null && player.input != null && player.input.keyPresses.jump();
     }
 
     @VynFunc
@@ -243,44 +411,22 @@ public final class Player {
 
     @VynFunc
     public boolean isDescending() {
-        // TODO(mapping): unconfirmed - verify against your version.
         return player != null && player.isDescending();
     }
 
     @VynFunc
     public boolean isVisuallyCrawling() {
-        // TODO(mapping): unconfirmed - possibly isVisuallyCrawling() - verify against your version.
         return player != null && player.isVisuallyCrawling();
     }
 
     @VynFunc
-    public boolean isBlocking() {
-        return player != null && player.isBlocking();
+    public boolean isFallFlying() {
+        return living() != null && living().isFallFlying();
     }
 
     @VynFunc
-    public boolean isRiding() {
-        return player != null && player.isPassenger();
-    }
-
-    @VynFunc
-    public boolean isPushable() {
-        return player != null && player.isPushable();
-    }
-
-    @VynFunc
-    public boolean isPushedByFluids() {
-        return player != null && player.isPushedByFluid();
-    }
-
-    @VynFunc
-    public boolean isInvulnerable() {
-        return player != null && player.isInvulnerable();
-    }
-
-    @VynFunc
-    public boolean isUsingItem() {
-        return player != null && player.isUsingItem();
+    public int getFallFlyingTicks() {
+        return (living() != null) ? living().getFallFlyingTicks() : 0;
     }
 
     @VynFunc
@@ -289,56 +435,40 @@ public final class Player {
     }
 
     @VynFunc
-    public boolean isFrozen() {
-        return player != null && player.isFullyFrozen();
+    public boolean isSleeping() {
+        return living() != null && living().isSleeping();
     }
 
     @VynFunc
-    public boolean isCurrentlyGlowing() {
-        return player != null && player.isCurrentlyGlowing();
+    public Position getSleepingPosition() {
+        if (living() == null || living().getSleepingPos().isEmpty()) {
+            return null;
+        }
+        final BlockPos pos = living().getSleepingPos().get();
+        return new Position(pos.getX(), pos.getY(), pos.getZ());
     }
 
     @VynFunc
-    public boolean isAutoJumpEnabled() {
-        // TODO(mapping): unconfirmed - verify against your version.
-        return player != null && player.isAutoJumpEnabled();
+    public float getJumpBoostPower() {
+        return (living() != null) ? living().getJumpBoostPower() : 0.0f;
+    }
+
+    // ------------------------------------------------------------------ fluids / fire / freezing
+
+    @VynFunc
+    public boolean isInLava() {
+        return player != null && player.isInLava();
     }
 
     @VynFunc
-    public boolean isSuppressingSlidingDownLadder() {
-        // TODO(mapping): unconfirmed - possibly redundant with onClimbable() - verify against your version.
-        return player != null && player.isSuppressingSlidingDownLadder();
+    public boolean isInFluid() {
+        return player != null && player.isInLiquid();
     }
 
     @VynFunc
-    public boolean getDoLimitedCrafting() {
-        // TODO(mapping): unconfirmed - verify against your version.
-        return player != null && player.getDoLimitedCrafting();
+    public boolean isTouchingWater() {
+        return player != null && player.isInWater();
     }
-
-    @VynFunc
-    public boolean isInsideWall() {
-        return player != null && player.isInWall();
-    }
-
-    @VynFunc
-    public boolean isJumping() {
-        // TODO(mapping): unconfirmed - verify against your version.
-        return player != null && player.jump();
-    }
-
-    @VynFunc
-    public boolean isOnRail() {
-        // TODO(mapping): unconfirmed - verify against your version.
-        return player != null && player.isOnRail();
-    }
-
-    @VynFunc
-    public boolean isFireImmune() {
-        // TODO(mapping): Mojang commonly exposes this without the "is" prefix as fireImmune() - verify.
-        return player != null && player.isFireImmune();
-    }
-
 
     @VynFunc
     public boolean isSubmergedInWater() {
@@ -346,18 +476,90 @@ public final class Player {
     }
 
     @VynFunc
-    public boolean isSneaking() {
-        return player != null && player.isShiftKeyDown();
+    public boolean isUnderWater() {
+        return isSubmergedInWater();
     }
 
     @VynFunc
-    public boolean isOnGround() {
-        return player != null && player.onGround();
+    public float getWaterVision() {
+        return player != null ? player.getWaterVision() : 0.0f;
     }
 
     @VynFunc
-    public boolean showsDeathScreen() {
-        return player != null && player.shouldShowDeathScreen();
+    public boolean canBreatheInWater() {
+        return living() != null && living().canBreatheUnderwater();
+    }
+
+    @VynFunc
+    public boolean canBreatheUnderwater() {
+        return canBreatheInWater();
+    }
+
+    @VynFunc
+    public boolean hasLandedInFluid() {
+        return living() != null && living().hasLandedInLiquid();
+    }
+
+    @VynFunc
+    public boolean hasLandedInLiquid() {
+        return hasLandedInFluid();
+    }
+
+    @VynFunc
+    public boolean isSensitiveToWater() {
+        return living() != null && living().isSensitiveToWater();
+    }
+
+    @VynFunc
+    public boolean isAffectedByFluids() {
+        return living() != null && living().isAffectedByFluids();
+    }
+
+    @VynFunc
+    public boolean isPushedByFluids() {
+        return player != null && player.isPushedByFluid();
+    }
+
+    @VynFunc
+    public boolean isOnFire() {
+        return player != null && player.isOnFire();
+    }
+
+    @VynFunc
+    public boolean isFireImmune() {
+        return player != null && player.fireImmune();
+    }
+
+    @VynFunc
+    public boolean canFreeze() {
+        return living() != null && living().canFreeze();
+    }
+
+    @VynFunc
+    public boolean isFreezing() {
+        return player != null && player.isFreezing();
+    }
+
+    @VynFunc
+    public boolean isFrozen() {
+        return player != null && player.isFullyFrozen();
+    }
+
+    @VynFunc
+    public int getTicksFrozen() {
+        return (player != null) ? player.getTicksFrozen() : 0;
+    }
+
+    @VynFunc
+    public float getPercentFrozen() {
+        return (player != null) ? player.getPercentFrozen() : 0.0f;
+    }
+
+    // ------------------------------------------------------------------ collision / generic flags
+
+    @VynFunc
+    public boolean isInsideWall() {
+        return player != null && player.isInWall();
     }
 
     @VynFunc
@@ -366,113 +568,271 @@ public final class Player {
     }
 
     @VynFunc
-    public boolean isInSneakingPose() {
-        return player != null && player.isCrouching();
+    public boolean isPushable() {
+        return player != null && player.isPushable();
     }
 
     @VynFunc
-    public boolean shouldSlowDown() {
-        // TODO(mapping): unconfirmed - verify against your version.
-        return player != null && player.shouldSlowDown();
+    public boolean isInvulnerable() {
+        return player != null && player.isInvulnerable();
     }
+
+    @VynFunc
+    public boolean isRiding() {
+        return player != null && player.isPassenger();
+    }
+
+    @VynFunc
+    public boolean isOnRail() {
+        return player != null && player.isOnRails();
+    }
+
+    @VynFunc
+    public boolean isInvisible() {
+        return player != null && player.isInvisible();
+    }
+
+    @VynFunc
+    public boolean isSilent() {
+        return player != null && player.isSilent();
+    }
+
+    @VynFunc
+    public boolean isCurrentlyGlowing() {
+        return player != null && player.isCurrentlyGlowing();
+    }
+
+    @VynFunc
+    public boolean shouldShowName() {
+        return living() != null && living().shouldShowName();
+    }
+
+    @VynFunc
+    public boolean isPickable() {
+        return player != null && player.isPickable();
+    }
+
+    @VynFunc
+    public boolean canBeSeenAsEnemy() {
+        return living() != null && living().canBeSeenAsEnemy();
+    }
+
+    @VynFunc
+    public boolean canBeSeenByAnyone() {
+        return living() != null && living().canBeSeenByAnyone();
+    }
+
+    // ------------------------------------------------------------------ item use / combat / swing
+
+    @VynFunc
+    public boolean isUsingItem() {
+        return player != null && player.isUsingItem();
+    }
+
+    @VynFunc
+    public int getItemUseTime() {
+        return (living() != null) ? living().getTicksUsingItem() : -1;
+    }
+
+    @VynFunc
+    public int getItemUseTimeLeft() {
+        return (living() != null) ? living().getUseItemRemainingTicks() : -1;
+    }
+
+    @VynFunc
+    public String getUsedItemHand() {
+        return (living() != null) ? living().getUsedItemHand().name() : null;
+    }
+
+    @VynFunc
+    public boolean isBlocking() {
+        return player != null && player.isBlocking();
+    }
+
+    @VynFunc
+    public float getSecondsToDisableBlocking() {
+        return (living() != null) ? living().getSecondsToDisableBlocking() : 0.0f;
+    }
+
+    @VynFunc
+    public boolean isSwinging() {
+        return living() != null && living().swinging;
+    }
+
+    @VynFunc
+    public int getSwingTime() {
+        return (living() != null) ? living().swingTime : 0;
+    }
+
+    @VynFunc
+    public float getAttackAnim(final double tickDelta) {
+        return (living() != null) ? living().getAttackAnim((float) tickDelta) : 0.0f;
+    }
+
+    // ------------------------------------------------------------------ potion / effect related
+
+    @VynFunc
+    public boolean isAffectedByPotions() {
+        return living() != null && living().isAffectedByPotions();
+    }
+
+    @VynFunc
+    public boolean attackable() {
+        return living() != null && living().attackable();
+    }
+
+    @VynFunc
+    public boolean isInvertedHealAndHarm() {
+        return living() != null && living().isInvertedHealAndHarm();
+    }
+
+    @VynFunc
+    public boolean hasInfiniteMaterials() {
+        return living() != null && living().hasInfiniteMaterials();
+    }
+
+    // ------------------------------------------------------------------ riding / vehicle
 
     @VynFunc
     public boolean isRidingJumpable() {
-        // TODO(mapping): unconfirmed - possibly jumpableVehicle() - verify against your version.
-        return player != null && player.getJumpingMount() != null;
+        return player != null && player.jumpableVehicle() != null;
     }
 
     @VynFunc
     public float getMountJumpStrength() {
-        // TODO(mapping): unconfirmed - verify against your version.
-        return player != null ? player.getMountJumpStrength() : 0.0f;
+        return player != null ? player.getJumpRidingScale() : 0.0f;
     }
 
     @VynFunc
-    public boolean isCamera() {
-        return player != null && client.getCameraEntity() == player;
+    public float getJumpRidingScale() {
+        return getMountJumpStrength();
     }
 
     @VynFunc
-    public int getPermissionLevel() {
-        return player != null ? player.getPermissionLevel() : 0;
+    public boolean isHandsBusy() {
+        return player != null && player.isHandsBusy();
     }
 
     @VynFunc
-    public boolean isMainPlayer() {
-        // TODO(mapping): unconfirmed - may not have a direct vanilla equivalent, verify against your version.
-        return player != null && player.isMainPlayer();
+    public boolean shouldRotateWithMinecart() {
+        return player != null && player.shouldRotateWithMinecart();
+    }
+
+    // ------------------------------------------------------------------ client-only flags (LocalPlayer)
+
+    @VynFunc
+    public boolean isAutoJumpEnabled() {
+        return player != null && player.isAutoJumpEnabled();
+    }
+
+    @VynFunc
+    public boolean isSuppressingSlidingDownLadder() {
+        return player != null && player.isSuppressingSlidingDownLadder();
+    }
+
+    @VynFunc
+    public boolean canSpawnSprintParticle() {
+        return player != null && player.canSpawnSprintParticle();
+    }
+
+    @VynFunc
+    public boolean getDoLimitedCrafting() {
+        return player != null && player.getDoLimitedCrafting();
+    }
+
+    @VynFunc
+    public boolean showsDeathScreen() {
+        return player != null && player.shouldShowDeathScreen();
+    }
+
+    @VynFunc
+    public boolean canDropItems() {
+        return player != null && player.canDropItems();
+    }
+
+    @VynFunc
+    public boolean isTextFilteringEnabled() {
+        return player != null && player.isTextFilteringEnabled();
     }
 
     @VynFunc
     public float getMoodPercentage() {
-        // TODO(mapping): unconfirmed and fairly obscure - verify against your version.
-        return player != null ? player.getMoodPercentage() : 0.0f;
-    }
-
-
-    @VynFunc
-    public boolean canBreatheInWater() {
-        return livingEntity != null && livingEntity.canBreatheInWater();
+        return player != null ? player.getCurrentMood() : 0.0f;
     }
 
     @VynFunc
-    public boolean hasLandedInFluid() {
-        // TODO(mapping): unconfirmed - verify against your version.
-        return livingEntity != null && livingEntity.hasLandedInFluid();
+    public float getCurrentMood() {
+        return getMoodPercentage();
+    }
+
+    @VynFunc
+    public float portalEffectIntensity() {
+        return player != null ? player.portalEffectIntensity : 0.0f;
+    }
+
+    @VynFunc
+    public String getPortalTransition() {
+        return (player != null) ? player.getActivePortalLocalTransition().name() : null;
+    }
+
+    // ------------------------------------------------------------------ misc scalars
+
+    @VynFunc
+    public int getMaxFallDistance() {
+        return (living() != null) ? living().getMaxFallDistance() : 0;
     }
 
     @VynFunc
     public boolean isBaby() {
-        return livingEntity != null && livingEntity.isBaby();
+        return living() != null && living().isBaby();
     }
 
     @VynFunc
     public float getAgeScale() {
-        // TODO(mapping): unconfirmed - possibly getAgeScale() - verify against your version.
-        return livingEntity != null ? livingEntity.getAgeScale() : 1.0f;
+        return (living() != null) ? living().getAgeScale() : 1.0f;
     }
 
     @VynFunc
     public float getScale() {
-        return livingEntity != null ? livingEntity.getScale() : 1.0f;
+        return (living() != null) ? living().getScale() : 1.0f;
     }
 
     @VynFunc
-    public boolean isDead() {
-        return livingEntity != null && livingEntity.isDeadOrDying();
+    public float getVoicePitch() {
+        return (living() != null) ? living().getVoicePitch() : 1.0f;
     }
 
     @VynFunc
-    public float getLuck() {
-        return livingEntity != null ? livingEntity.getLuck() : 0.0f;
+    public String getMainArm() {
+        return (living() != null) ? living().getMainArm().name() : null;
     }
 
     @VynFunc
-    public float getAbsorptionAmount() {
-        return livingEntity != null ? livingEntity.getAbsorptionAmount() : 0.0f;
+    public float getSwimAmount(final double tickDelta) {
+        return (living() != null) ? living().getSwimAmount((float) tickDelta) : 0.0f;
     }
 
     @VynFunc
-    public float getMaxAbsorption() {
-        // TODO(mapping): unconfirmed - verify against your version.
-        return livingEntity != null ? livingEntity.getMaxAbsorption() : 0.0f;
+    public double getVisibilityPercent() {
+        return (living() != null) ? living().getVisibilityPercent(null) : 0;
     }
 
     @VynFunc
-    public int getStuckArrowCount() {
-        return livingEntity != null ? livingEntity.getArrowCount() : 0;
+    public float getYBob() {
+        return player != null ? player.yBob : 0.0f;
     }
 
     @VynFunc
-    public int getStingerCount() {
-        return livingEntity != null ? livingEntity.getStingerCount() : 0;
+    public float getXBob() {
+        return player != null ? player.xBob : 0.0f;
     }
+
+    // ------------------------------------------------------------------ actions
 
     @VynFunc
     public void playSound(final String soundId, final double volume, final double pitch) {
         if (player != null) {
-            player.playSound(BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(soundId)), (float) volume, (float) pitch);
+            player.playSound(BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(soundId)).get().value(), (float) volume, (float) pitch);
         }
     }
 
@@ -481,7 +841,7 @@ public final class Player {
         if (player == null) {
             return;
         }
-        player.playSound(BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(sound.getName())), (float) sound.getVolume(), (float) sound.getPitch());
+        player.playSound(BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(sound.getName())).get().value(), (float) sound.getVolume(), (float) sound.getPitch());
     }
 
     @VynFunc
