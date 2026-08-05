@@ -13,12 +13,11 @@ import studio.meraki.vynapi.handler.script.ScriptHandler;
 @Mixin(Minecraft.class)
 public abstract class MinecraftClientMixin {
 
-    @Unique
-    private final Minecraft vynAPI$client = Minecraft.getInstance();
-
 
     @Inject(method = "tick", at = @At("TAIL"))
     private void onTickEnd(final CallbackInfo ci) {
+        final Minecraft vynAPI$client = Minecraft.getInstance();
+
         DebugTextHandler.onTickEnd();
 
         if (vynAPI$client.level == null || vynAPI$client.isPaused())
@@ -30,6 +29,7 @@ public abstract class MinecraftClientMixin {
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onTickStart(final CallbackInfo ci) {
+        final Minecraft vynAPI$client = Minecraft.getInstance();
         ScriptHandler.tick(vynAPI$client);
     }
 }
