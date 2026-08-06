@@ -17,7 +17,7 @@ dependencies {
     // because multiloader uses compileOnly + source copy, so transitive deps aren't automatically on runtime classpath
     api 'me.abdelaziz:Vyn-Script:1.0-SNAPSHOT'
 
-    // Fabric and NeoForge both bundle Fabric Mixin, so it is safe to use it in common
+    // fabric and neoforge both bundle mixinextras, so it is safe to use it in common
     compileOnly group: 'org.spongepowered', name: 'mixin', version: '0.8.5'
     // Fabric and NeoForge both bundle MixinExtras, so it is safe to use it in common
     compileOnly group: 'io.github.llamalad7', name: 'mixinextras-common', version: '0.3.5'
@@ -38,4 +38,23 @@ configurations {
 artifacts {
     commonJava sourceSets.main.java.sourceDirectories.singleFile
     commonResources sourceSets.main.resources.sourceDirectories.singleFile
+}
+
+// Implement mcgradleconventions loader attribute
+def loaderAttribute = Attribute.of('io.github.mcgradleconventions.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements', 'javadocElements'].each { variant ->
+    configurations.named("$variant") {
+        attributes {
+            attribute(loaderAttribute, 'common')
+        }
+    }
+}
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant->
+        configurations.named("$variant") {
+            attributes {
+                attribute(loaderAttribute, 'common')
+            }
+        }
+    }
 }

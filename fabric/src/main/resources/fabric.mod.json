@@ -7,15 +7,16 @@
     "authors": [
         "${mod_author}"
     ],
-    "contact": {},
+    "contact": {
+        "homepage": "https://fabricmc.net/",
+        "sources": "https://github.com/FabricMC/fabric-example-mod"
+    },
     "license": "${license}",
-    "environment": "client",
+    "icon": "${mod_id}.png",
+    "environment": "*",
     "entrypoints": {
         "main": [
             "studio.meraki.vynapi.VynAPI"
-        ],
-        "client": [
-            "studio.meraki.vynapi.client.VynAPIClient"
         ]
     },
     "mixins": [
@@ -25,7 +26,7 @@
     "depends": {
         "fabricloader": ">=${fabric_loader_version}",
         "fabric-api": "*",
-        "minecraft": "${minecraft_version}",
+        "minecraft": "~${minecraft_version}",
         "java": ">=${java_version}"
     }
 }
