@@ -11,10 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
-public final class ScriptLoader extends SimplePreparableReloadListener<Map<ResourceLocation, ScriptLoader.LoadedScript>> {
+public final class ScriptLoader extends SimplePreparableReloadListener<List<ScriptLoader.LoadedScript>> {
 
     private static final Logger log = LoggerFactory.getLogger(ScriptLoader.class);
     private static final ScriptLoader INSTANCE = new ScriptLoader();
@@ -31,28 +32,33 @@ public final class ScriptLoader extends SimplePreparableReloadListener<Map<Resou
     }
 
     @Override
-    protected @NotNull Map<ResourceLocation, LoadedScript> prepare(final ResourceManager manager, final @NotNull ProfilerFiller profiler) {
-        final Map<ResourceLocation, LoadedScript> scripts = new LinkedHashMap<>();
+    protected @NotNull List<LoadedScript> prepare(final ResourceManager manager, final @NotNull ProfilerFiller profiler) {
+        final List<LoadedScript> scripts = new ArrayList<>();
 
-        for (final ResourceLocation id : manager.listResources(
+        // Scripts live in the "scripts" folder of ANY namespace, e.g.
+        // assets/interactivestuff/scripts/<file>.vyn in a resource pack.
+        // Previously this only accepted the "minecraft" namespace, which is
+        // why scripts shipped in packs (like "interactivestuff") never loaded.
+        for (final Map.Entry<ResourceLocation, List<Resource>> entry : manager.listResourceStacks(
                 "scripts",
-                candidate -> candidate.getNamespace().equals("minecraft")
-                        && candidate.getPath().endsWith(".vyn")
-        ).keySet()) {
-            try {
-                for (final Resource resource : manager.getResourceStack(id)) {
-                    try (final InputStream stream = resource.open()) {
-                        final String path = id.getPath();
-                        final String fileName = path.substring(path.lastIndexOf('/') + 1);
-                        final String fileVariable = fileName.substring(0, fileName.length() - ".vyn".length());
-                        final String packId = resource.sourcePackId();
+                candidate -> candidate.getPath().endsWith(".vyn")
+        ).entrySet()) {
+            final ResourceLocation id = entry.getKey();
+            final String path = id.getPath();
+            final String fileName = path.substring(path.lastIndexOf('/') + 1);
+            final String fileVariable = fileName.substring(0, fileName.length() - ".vyn".length());
 
-                        scripts.put(id, new LoadedScript(packId, fileVariable,
-                                new String(stream.readAllBytes(), StandardCharsets.UTF_8)));
-                    }
+            // The stack is ordered from the highest priority pack to the lowest.
+            // Every pack's copy of the script is loaded so that scripts with the
+            // same name in different packs don't shadow each other; each copy is
+            // registered under its own pack id (usable in importScript/excludeScript).
+            for (final Resource resource : entry.getValue()) {
+                try (final InputStream stream = resource.open()) {
+                    scripts.add(new LoadedScript(resource.sourcePackId(), fileVariable,
+                            new String(stream.readAllBytes(), StandardCharsets.UTF_8)));
+                } catch (final Exception e) {
+                    log.error("Failed to load script {} from pack {}", id, resource.sourcePackId(), e);
                 }
-            } catch (final Exception e) {
-                log.error("Failed to load script: {}", id, e);
             }
         }
 
@@ -60,12 +66,17 @@ public final class ScriptLoader extends SimplePreparableReloadListener<Map<Resou
     }
 
     @Override
-    protected void apply(final Map<ResourceLocation, LoadedScript> prepared, final @NotNull ResourceManager manager, final @NotNull ProfilerFiller profiler) {
+    protected void apply(final List<LoadedScript> prepared, final @NotNull ResourceManager manager, final @NotNull ProfilerFiller profiler) {
         ScriptHandler.clearScripts();
-        for (final LoadedScript script : prepared.values()) {
+        for (final LoadedScript script : prepared) {
             ScriptHandler.addScript(script.packId(), script.variableName(), script.source());
         }
         ScriptHandler.loadScripts();
+
+        log.info("VynAPI loaded {} .vyn script(s) from {} pack(s): {}",
+                prepared.size(),
+                prepared.stream().map(LoadedScript::packId).distinct().count(),
+                prepared.stream().map(script -> script.packId() + "/" + script.variableName() + ".vyn").toList());
     }
 
     public record LoadedScript(String packId, String variableName, String source) {
