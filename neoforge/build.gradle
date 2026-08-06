@@ -6,8 +6,10 @@ plugins {
 dependencies {
     // Vyn Script engine - same reason as fabric, common deps aren't transitive with current multiloader setup
     implementation "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
-    // Bundle it via jarJar so it's present at runtime
+    // Bundle it via jarJar so it's present at runtime in production jars
     jarJar(group: "me.abdelaziz", name: "Vyn-Script", version: "1.0-SNAPSHOT")
+    // Add to development runtime classpath for NeoForge runs (fixes NoClassDefFoundError: NativeFunction)
+    additionalRuntimeClasspath "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
 }
 
 neoForge {

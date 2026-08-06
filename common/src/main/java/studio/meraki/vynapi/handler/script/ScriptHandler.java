@@ -24,9 +24,8 @@ import java.util.function.Consumer;
 @SuppressWarnings("unused")
 public final class ScriptHandler {
 
-    private static final Player PLAYER_VAR = new Player(Minecraft.getInstance().player, Minecraft.getInstance());
+    private static final Player PLAYER_VAR = new Player();
     private static final Key KEY = new Key();
-    private static final ModLoader MOD_LOADER = ModLoader.INSTANCE;
 
     private static final Map<String, PackScripts> packScripts = new ConcurrentHashMap<>();
 
@@ -42,7 +41,8 @@ public final class ScriptHandler {
     }
 
     public static void setPlayerVar() {
-        PLAYER_VAR.setPlayer(Minecraft.getInstance().player);
+        final Minecraft client = Minecraft.getInstance();
+        PLAYER_VAR.setPlayer(client != null ? client.player : null);
     }
 
     public static void init() {
@@ -59,7 +59,7 @@ public final class ScriptHandler {
             NativeBinder.defineConstant(listener, "player", PLAYER_VAR);
             NativeBinder.defineConstant(listener, "world", PLAYER_VAR.getWorld());
             NativeBinder.defineConstant(listener, "key", KEY);
-            NativeBinder.defineConstant(listener, "modLoader", MOD_LOADER);
+            NativeBinder.defineConstant(listener, "modLoader", ModLoader.INSTANCE);
 
             listener.defineFunction("debugText", DEBUG_TEXT_FUNCTION);
             listener.defineFunction("importScript", IMPORT_SCRIPT_FUNCTION);
