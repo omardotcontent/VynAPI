@@ -21,12 +21,18 @@ import java.util.Objects;
 public final class Player {
 
     private LocalPlayer player;
-    private final Minecraft client;
     private LivingEntity livingEntity;
+
+    public Player() {
+        this(null);
+    }
+
+    public Player(final LocalPlayer player) {
+        this.player = player;
+    }
 
     public Player(final LocalPlayer player, final Minecraft client) {
         this.player = player;
-        this.client = client;
     }
 
     public void setLivingEntity(final LivingEntity entity) {
@@ -50,11 +56,16 @@ public final class Player {
         return livingEntity != null ? livingEntity : player;
     }
 
+    private static Minecraft client() {
+        return Minecraft.getInstance();
+    }
+
     // ------------------------------------------------------------------ blocks / world
 
     @VynFunc
     public Block getSteppingBlock() {
-        if (player == null || client.level == null) {
+        final Minecraft client = client();
+        if (player == null || client == null || client.level == null) {
             return null;
         }
         return new Block(player.getOnPos(), client.level);
@@ -62,7 +73,8 @@ public final class Player {
 
     @VynFunc
     public List<Block> getNearbyBlocks(final int blockRadius) {
-        if (player == null || client.level == null) {
+        final Minecraft client = client();
+        if (player == null || client == null || client.level == null) {
             return null;
         }
         final List<Block> blocks = new ArrayList<>();
@@ -81,7 +93,8 @@ public final class Player {
 
     @VynFunc
     public Block getTargetBlock() {
-        if (!(client.hitResult instanceof BlockHitResult blockHit)) {
+        final Minecraft client = client();
+        if (client == null || !(client.hitResult instanceof BlockHitResult blockHit)) {
             return null;
         }
         if (player == null || client.level == null) {
@@ -92,7 +105,8 @@ public final class Player {
 
     @VynFunc
     public World getWorld() {
-        return (client.level != null) ? new World(client.level) : null;
+        final Minecraft client = client();
+        return (client != null && client.level != null) ? new World(client.level) : null;
     }
 
     // ------------------------------------------------------------------ identity / game state
@@ -109,14 +123,16 @@ public final class Player {
 
     @VynFunc
     public String getGameMode() {
-        return (player != null && client.gameMode != null && client.gameMode.getPlayerMode() != null)
+        final Minecraft client = client();
+        return (player != null && client != null && client.gameMode != null && client.gameMode.getPlayerMode() != null)
                 ? client.gameMode.getPlayerMode().getName()
                 : null;
     }
 
     @VynFunc
     public boolean isCamera() {
-        return player != null && client.getCameraEntity() == player;
+        final Minecraft client = client();
+        return player != null && client != null && client.getCameraEntity() == player;
     }
 
     @VynFunc
@@ -401,7 +417,7 @@ public final class Player {
     @VynFunc
     public boolean isJumping() {
         // LocalPlayer#input holds the authoritative client-side key state; Input#jump() is the jump key flag.
-        return player != null && player.input.keyPresses.jump();
+        return player != null && player.input != null && player.input.keyPresses != null && player.input.keyPresses.jump();
     }
 
     @VynFunc
@@ -641,7 +657,7 @@ public final class Player {
 
     @VynFunc
     public String getUsedItemHand() {
-        return (living() != null) ? living().getUsedItemHand().name() : null;
+        return (living() != null && living().getUsedItemHand() != null) ? living().getUsedItemHand().name() : null;
     }
 
     @VynFunc
@@ -772,7 +788,7 @@ public final class Player {
 
     @VynFunc
     public String getPortalTransition() {
-        return (player != null) ? player.getActivePortalLocalTransition().name() : null;
+        return (player != null && player.getActivePortalLocalTransition() != null) ? player.getActivePortalLocalTransition().name() : null;
     }
 
     // ------------------------------------------------------------------ misc scalars
@@ -804,7 +820,7 @@ public final class Player {
 
     @VynFunc
     public String getMainArm() {
-        return (living() != null) ? living().getMainArm().name() : null;
+        return (living() != null && living().getMainArm() != null) ? living().getMainArm().name() : null;
     }
 
     @VynFunc
@@ -846,7 +862,8 @@ public final class Player {
 
     @VynFunc
     public void playSoundWorld(final Position position, final String soundId, final double volume, final double pitch) {
-        if (player == null || client.level == null) {
+        final Minecraft client = client();
+        if (player == null || client == null || client.level == null) {
             return;
         }
         client.level.playLocalSound(
@@ -862,7 +879,8 @@ public final class Player {
 
     @VynFunc
     public void playSoundWorld(final Position position, final Sound sound) {
-        if (player == null || client.level == null) {
+        final Minecraft client = client();
+        if (player == null || client == null || client.level == null) {
             return;
         }
         client.level.playLocalSound(
