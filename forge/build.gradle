@@ -1,17 +1,8 @@
 plugins {
     id 'multiloader-loader'
-    // Pinned, see the root build.gradle for why (the '[6.0.24,6.2)' range could resolve
-    // to a stale cached ForgeGradle, missing the Gradle 8.14.x / modern-MC fixes).
-    id 'net.minecraftforge.gradle' version '6.0.54'
-    id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
-    // Needed by ForgeGradle's copyIdeResources + IntelliJ run configs, and it registers
-    // the 'ideaSyncTask' hook below that pre-warms the Forge toolchain during IDE sync.
+    id 'net.minecraftforge.gradle'
+    id 'net.minecraftforge.jarjar'
     id 'idea'
-}
-
-mixin {
-    config("${mod_id}.mixins.json")
-    config("${mod_id}.forge.mixins.json")
 }
 
 jar {
@@ -83,8 +74,7 @@ dependencies {
     // Declared here as well because common is compileOnly + source copied.
     minecraftLibrary "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
     jarJar(group: "me.abdelaziz", name: "Vyn-Script", version: "1.0-SNAPSHOT")
-
-    annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     // Forge's hack fix
     implementation('net.sf.jopt-simple:jopt-simple:5.0.4') { version { strictly '5.0.4' } }
