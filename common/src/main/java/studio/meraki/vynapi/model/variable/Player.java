@@ -4,10 +4,11 @@ import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.commands.Commands;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.BlockHitResult;
@@ -147,7 +148,13 @@ public final class Player {
 
     @VynFunc
     public int getPermissionLevel() {
-        return player != null ? player.getPermissionLevel() : 0;
+        if (player == null) return 0;
+        var perms = player.permissions();
+        if (Commands.LEVEL_OWNERS.check(perms))      return 4;
+        if (Commands.LEVEL_ADMINS.check(perms))      return 3;
+        if (Commands.LEVEL_GAMEMASTERS.check(perms)) return 2;
+        if (Commands.LEVEL_MODERATORS.check(perms))  return 1;
+        return 0;
     }
 
     @VynFunc
@@ -848,7 +855,7 @@ public final class Player {
     @VynFunc
     public void playSound(final String soundId, final double volume, final double pitch) {
         if (player != null) {
-            player.playSound(BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(soundId)).get().value(), (float) volume, (float) pitch);
+            player.playSound(BuiltInRegistries.SOUND_EVENT.get(Identifier.parse(soundId)).get().value(), (float) volume, (float) pitch);
         }
     }
 
@@ -857,7 +864,7 @@ public final class Player {
         if (player == null) {
             return;
         }
-        player.playSound(BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(sound.getName())).get().value(), (float) sound.getVolume(), (float) sound.getPitch());
+        player.playSound(BuiltInRegistries.SOUND_EVENT.get(Identifier.parse(sound.getName())).get().value(), (float) sound.getVolume(), (float) sound.getPitch());
     }
 
     @VynFunc
@@ -870,7 +877,7 @@ public final class Player {
                 position.getX(),
                 position.getY(),
                 position.getZ(),
-                BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(soundId)).get().value(),
+                BuiltInRegistries.SOUND_EVENT.get(Identifier.parse(soundId)).get().value(),
                 SoundSource.BLOCKS,
                 (float) volume,
                 (float) pitch,
@@ -887,7 +894,7 @@ public final class Player {
                 position.getX(),
                 position.getY(),
                 position.getZ(),
-                BuiltInRegistries.SOUND_EVENT.get(ResourceLocation.parse(sound.getName())).get().value(),
+                BuiltInRegistries.SOUND_EVENT.get(Identifier.parse(sound.getName())).get().value(),
                 SoundSource.BLOCKS,
                 (float) sound.getVolume(),
                 (float) sound.getPitch(),

@@ -4,7 +4,7 @@ import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -34,8 +34,8 @@ public final class Block {
                 .wrapAsHolder(blockState.getBlock())
                 .tags()
                 .anyMatch(tag -> {
-                    ResourceLocation tagId = tag.location();
-                    return (tagId.equals(ResourceLocation.tryParse(tagID))) || tagId.getPath().equalsIgnoreCase(tagID);
+                    Identifier tagId = tag.location();
+                    return (tagId.equals(Identifier.tryParse(tagID))) || tagId.getPath().equalsIgnoreCase(tagID);
                 });
     }
 

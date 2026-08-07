@@ -1,6 +1,6 @@
 package studio.meraki.vynapi.handler.script;
 
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -39,11 +39,11 @@ public final class ScriptLoader extends SimplePreparableReloadListener<List<Scri
         // assets/interactivestuff/scripts/<file>.vyn in a resource pack.
         // Previously this only accepted the "minecraft" namespace, which is
         // why scripts shipped in packs (like "interactivestuff") never loaded.
-        for (final Map.Entry<ResourceLocation, List<Resource>> entry : manager.listResourceStacks(
+        for (final Map.Entry<Identifier, List<Resource>> entry : manager.listResourceStacks(
                 "scripts",
                 candidate -> candidate.getPath().endsWith(".vyn")
         ).entrySet()) {
-            final ResourceLocation id = entry.getKey();
+            final Identifier id = entry.getKey();
             final String path = id.getPath();
             final String fileName = path.substring(path.lastIndexOf('/') + 1);
             final String fileVariable = fileName.substring(0, fileName.length() - ".vyn".length());
