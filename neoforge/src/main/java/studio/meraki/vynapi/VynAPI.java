@@ -20,7 +20,7 @@ public class VynAPI {
 
     private void registerReloadListeners(final AddClientReloadListenersEvent event) {
         event.addListener(
-                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(Services.MOD_ID, "script_loader"),
+                net.minecraft.resources.Identifier.fromNamespaceAndPath(Services.MOD_ID, "script_loader"),
                 ScriptLoader.getInstance()
         );
     }

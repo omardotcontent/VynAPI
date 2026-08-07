@@ -8,7 +8,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import studio.meraki.vynapi.handler.script.ScriptHandler;
 import studio.meraki.vynapi.model.variable.Position;
 import studio.meraki.vynapi.model.variable.Sound;
@@ -20,7 +20,7 @@ public abstract class SoundListenerMixin {
     private final Minecraft client = Minecraft.getInstance();
 
     @Inject(method = "play", at = @At("TAIL"))
-    private void vynapi$play(SoundInstance sound, CallbackInfo ci) {
+    private void vynapi$play(SoundInstance sound, CallbackInfoReturnable<SoundEngine.PlayResult> cir) {
         if (client.player == null
                 || client.level == null
                 || sound.getSource() == SoundSource.AMBIENT)
@@ -28,7 +28,7 @@ public abstract class SoundListenerMixin {
 
         ScriptHandler.fireEvent("onPlaySound",
                 new Sound(
-                        sound.getLocation().toString(),
+                        sound.getIdentifier().toString(),
                         sound.getVolume(),
                         sound.getPitch(),
                         new Position((int) sound.getX(), (int) sound.getY(), (int) sound.getZ())

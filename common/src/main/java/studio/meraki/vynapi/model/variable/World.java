@@ -27,7 +27,7 @@ public final class World {
 
     @VynFunc
     public String getDimension() {
-        return sourceWorld.dimension().location().toString();
+        return sourceWorld.dimension().identifier().toString();
     }
 
     @VynFunc
@@ -64,7 +64,7 @@ public final class World {
     private String getBiomeId(final BlockPos pos) {
         return sourceWorld.getBiome(pos)
                 .unwrapKey()
-                .map(key -> key.location().toString())
+                .map(key -> key.identifier().toString())
                 .orElse(null);
     }
 
