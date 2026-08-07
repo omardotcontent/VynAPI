@@ -6,7 +6,7 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "player.ArmSwingMixin",
-    "render.GameRendererMixin",
+    "render.GuiMixin",
     "sound.SoundListenerMixin",
     "client.MinecraftClientMixin",
     "client.ClientPacketListenerMixin"
