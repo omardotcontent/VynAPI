@@ -10,6 +10,7 @@ dependencies {
     // Vyn Script engine - must be declared here as well because common is compileOnly + source copied
     // Include it into the jar so it's present at runtime (fixes NoClassDefFoundError: NativeFunction)
     implementation "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
+    include "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
 }
 
 loom {
