@@ -18,7 +18,7 @@ public abstract class GuiMixin {
     public abstract Font getFont();
 
     @Inject(
-            method = "render(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V",
+            method = "renderSavingIndicator(Lnet/minecraft/client/gui/GuiGraphics;Lnet/minecraft/client/DeltaTracker;)V",
             at = @At("TAIL")
     )
     private void debugText(final GuiGraphics guiGraphics, final DeltaTracker deltaTracker, final CallbackInfo ci) {
