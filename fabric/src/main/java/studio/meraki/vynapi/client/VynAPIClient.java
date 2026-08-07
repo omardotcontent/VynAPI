@@ -15,6 +15,6 @@ public final class VynAPIClient implements ClientModInitializer {
     public void onInitializeClient() {
         ScriptLoader.init();
         ResourceLoader.get(PackType.CLIENT_RESOURCES)
-                .registerReloader(FabricScriptReloadListener.ID, FabricScriptReloadListener.getInstance());
+                .registerReloadListener(FabricScriptReloadListener.ID, FabricScriptReloadListener.getInstance());
     }
 }

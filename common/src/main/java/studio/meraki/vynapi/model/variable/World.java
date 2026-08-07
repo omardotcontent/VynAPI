@@ -3,6 +3,7 @@ package studio.meraki.vynapi.model.variable;
 import me.abdelaziz.api.annotation.VynFunc;
 import me.abdelaziz.api.annotation.VynType;
 import net.minecraft.client.renderer.BiomeColors;
+import net.minecraft.client.renderer.block.BlockAndTintGetter;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.level.Level;
@@ -37,7 +38,7 @@ public final class World {
 
     @VynFunc
     public long getDayTime() {
-        return sourceWorld.getDayTime();
+        return sourceWorld.getDefaultClockTime();
     }
 
     @VynFunc
@@ -70,17 +71,17 @@ public final class World {
 
     @VynFunc
     public int getGrassColor(final Position position) {
-        return BiomeColors.getAverageGrassColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
+        return BiomeColors.getAverageGrassColor((BlockAndTintGetter) sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
     }
 
     @VynFunc
     public int getFoliageColor(final Position position) {
-        return BiomeColors.getAverageFoliageColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
+        return BiomeColors.getAverageFoliageColor((BlockAndTintGetter) sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
     }
 
     @VynFunc
     public int getWaterColor(final Position position) {
-        return BiomeColors.getAverageWaterColor(sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
+        return BiomeColors.getAverageWaterColor((BlockAndTintGetter) sourceWorld, new BlockPos(position.getX(), position.getY(), position.getZ()));
     }
 
     @VynFunc

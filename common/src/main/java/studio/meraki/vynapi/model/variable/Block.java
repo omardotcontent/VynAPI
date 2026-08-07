@@ -50,7 +50,7 @@ public final class Block {
 
     @VynFunc
     public int getLightBlock() {
-        return blockState.getLightBlock();
+        return blockState.getLightDampening();
     }
 
     @VynFunc

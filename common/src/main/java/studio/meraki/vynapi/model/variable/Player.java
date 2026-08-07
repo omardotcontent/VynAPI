@@ -904,7 +904,7 @@ public final class Player {
     @VynFunc
     public void sendMessage(final String message) {
         if (player != null)
-            player.displayClientMessage(Component.literal(message), false);
+            player.sendSystemMessage(Component.literal(message));
     }
 
     public LocalPlayer getPlayer() {
