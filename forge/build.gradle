@@ -1,7 +1,12 @@
 plugins {
     id 'multiloader-loader'
-    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)'
+    // Pinned, see the root build.gradle for why (the '[6.0.24,6.2)' range could resolve
+    // to a stale cached ForgeGradle, missing the Gradle 8.14.x / modern-MC fixes).
+    id 'net.minecraftforge.gradle' version '6.0.54'
     id 'org.spongepowered.mixin' version '0.7-SNAPSHOT'
+    // Needed by ForgeGradle's copyIdeResources + IntelliJ run configs, and it registers
+    // the 'ideaSyncTask' hook below that pre-warms the Forge toolchain during IDE sync.
+    id 'idea'
 }
 
 mixin {
@@ -89,4 +94,42 @@ sourceSets.each {
     def dir = layout.buildDirectory.dir("sourcesSets/$it.name")
     it.output.resourcesDir = dir
     it.java.destinationDirectory = dir
+}
+
+// ---------------------------------------------------------------------------
+// ForgeGradle 6 + IntelliJ sync workaround
+// ---------------------------------------------------------------------------
+// ForgeGradle 6 generates the Forge/MCP toolchain artifacts (net.minecraft:joined
+// srg jar, the mapped userdev jar, etc.) lazily, when the 'minecraft' configuration
+// is resolved. IntelliJ resolves that configuration during the sync's tooling-model
+// phase, where FG 6 can fail with:
+//
+//   ObjectInstantiationException: Could not create an instance of type
+//     org.gradle.jvm.toolchain.internal.DefaultToolchainSpec
+//   Caused by: IllegalStateException: project services has been closed
+//   Error getting artifact: net.minecraft:joined:...:srg@jar from MCPRepo
+//
+// ...leaving the forge module with no Forge classes ("module knows nothing about forge").
+// FG 6 keeps its MCP repo in a static singleton that outlives individual Gradle builds
+// inside the long-lived daemon IntelliJ uses, so the toolchain lookup can end up running
+// against a project whose services were already closed. The pipeline itself works fine in
+// a normal task context, so we force it to run (and cache its artifacts) during the
+// sync's task phase instead of its model phase.
+tasks.named('ideaSyncTask') {
+    doFirst {
+        configurations.minecraft.resolve()
+    }
+}
+
+// One-time terminal setup:  ./gradlew :forge:setupWorkspace
+// Generates and caches all Forge/MCP toolchain artifacts outside of the IDE sync.
+// Run this once after a fresh clone (or after deleting the ForgeGradle cache), then
+// sync IntelliJ - the sync will read the cached artifacts instead of re-running the
+// fragile lazy pipeline.
+tasks.register('setupWorkspace') {
+    group = 'forge'
+    description = 'Pre-generates the Forge/MCP toolchain artifacts so IDE sync does not have to (run once per fresh checkout).'
+    doLast {
+        configurations.minecraft.resolve()
+    }
 }

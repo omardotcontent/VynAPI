@@ -4,5 +4,10 @@ plugins {
     // see https://projects.neoforged.net/neoforged/moddevgradle for new versions
     id 'net.neoforged.moddev' version '2.0.143' apply false
     // see https://docs.minecraftforge.net/en/fg-6.x for new versions
-    id 'net.minecraftforge.gradle' version '[6.0.24,6.2)' apply false
+    // Pinned to the current 6.0.x release. The old '[6.0.24,6.2)' range could resolve
+    // to a stale cached version; 6.0.47+ includes the Artifactural fix for Gradle 8.14.x
+    // and 6.0.48+ fixes the official mappings channel / tooling for modern Minecraft.
+    // NOTE: ForgeGradle 7 (the official line for 1.21.11) requires Gradle 9.3+, which the
+    // other loaders here (Loom 1.13, ModDevGradle 2.0) are not pinned for yet.
+    id 'net.minecraftforge.gradle' version '6.0.54' apply false
 }
