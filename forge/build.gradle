@@ -18,6 +18,19 @@ jar {
 // Enable Forge's Jar-in-Jar so Vyn-Script is bundled into the production jar
 jarJar.enable()
 
+// By default 'jarJar' outputs a separate '-all.jar' alongside the plain 'jar'
+// (which has no bundled deps). We only want one jar, so make 'jarJar' take
+// over the normal (no-classifier) filename and stop 'jar' from being built.
+tasks.named('jarJar') {
+    archiveClassifier = ''
+}
+tasks.named('jar') {
+    enabled = false
+}
+tasks.named('assemble') {
+    dependsOn(tasks.named('jarJar'))
+}
+
 minecraft {
     mappings channel: 'official', version: minecraft_version
 
@@ -77,8 +90,9 @@ dependencies {
     // and jarJar bundles it into the production jar (fixes NoClassDefFoundError: NativeFunction).
     // Declared here as well because common is compileOnly + source copied.
     minecraftLibrary "me.abdelaziz:Vyn-Script:1.0-SNAPSHOT"
-    jarJar(group: "me.abdelaziz", name: "Vyn-Script", version: "1.0-SNAPSHOT")
-
+    jarJar(group: "me.abdelaziz", name: "Vyn-Script", version: "[1.0-SNAPSHOT,2)") {
+        jarJar.pin(it, "1.0-SNAPSHOT")
+    }
     annotationProcessor("org.spongepowered:mixin:0.8.5-SNAPSHOT:processor")
 
     // Forge's hack fix
